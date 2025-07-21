@@ -63,11 +63,7 @@
       <!-- Credits Section -->
       <fieldset class="form-section">
         <legend>Credits</legend>
-        <label for="creditsLayout">Credits Layout:</label>
-        <select id="creditsLayout" name="creditsLayout">
-          <option value="list">List Layout</option>
-          <option value="grid">Photo Grid Layout</option>
-        </select><br>
+
 
         <label>Cast:</label>
         <div id="cast-container"></div>
@@ -171,7 +167,7 @@
       }
     }
 
-    function addAdvert(title = '', layout = 'full') {
+    function addAdvert(title = '') {
       const container = document.getElementById('adverts-container');
       const count = container.children.length;
       if (count < 10) {
@@ -179,11 +175,6 @@
         row.className = 'advert-row';
         row.innerHTML = `
           <input type="text" name="advertTitle[]" placeholder="Advert Title" value="${title}">
-          <select name="advertLayout[]">
-            <option value="full" ${layout === 'full' ? 'selected' : ''}>Full Page</option>
-            <option value="half" ${layout === 'half' ? 'selected' : ''}>Half Page</option>
-            <option value="quarter" ${layout === 'quarter' ? 'selected' : ''}>Quarter Page</option>
-          </select>
           <input type="file" name="advertImage[]" accept="image/*" class="advert-image">
           <div class="advert-preview-small"></div>
           <button type="button" class="removeAdvertBtn">Remove</button>
@@ -249,9 +240,6 @@
       // Director's note
       document.getElementById('directorNote').value = 'Welcome to our magical world! This production has been a labour of love, bringing together talented performers to create something truly special. We hope you enjoy this enchanting journey.';
 
-      // Credits layout
-      document.getElementById('creditsLayout').value = 'grid';
-
       // Sponsor info
       document.getElementById('sponsorInfo').value = 'Special thanks to our sponsors: Moonbeam Catering, Starlight Costumes, and the Arts Council for their generous support.';
 
@@ -271,8 +259,8 @@
       addRow('crew', 'Sunny Dew', 'Lighting');
 
       // Add sample adverts
-      addAdvert('Moonbeam Catering', 'half');
-      addAdvert('Starlight Costumes', 'quarter');
+      addAdvert('Moonbeam Catering');
+      addAdvert('Starlight Costumes');
 
       // Clear photo previews
       document.getElementById('photo-preview').innerHTML = '';
@@ -296,7 +284,6 @@
 
       // Reset selects to default values
       document.getElementById('theme').value = 'classic';
-      document.getElementById('creditsLayout').value = 'list';
 
       // Reset checkboxes
       document.getElementById('overlayInfo').checked = false;
@@ -343,7 +330,6 @@
       const contactInfo = document.getElementById('contactInfo').value;
       const directorNote = document.getElementById('directorNote').value;
       const sponsorInfo = document.getElementById('sponsorInfo').value;
-      const creditsLayout = document.getElementById('creditsLayout').value;
       const overlayInfo = document.getElementById('overlayInfo').checked;
 
       // Cast & Crew
@@ -367,10 +353,9 @@
       const advertRows = document.querySelectorAll('#adverts-container .advert-row');
       const adverts = Array.from(advertRows).map(row => {
         const title = row.querySelector('input[name="advertTitle[]"]').value;
-        const layout = row.querySelector('select[name="advertLayout[]"]').value;
         const imageInput = row.querySelector('input[name="advertImage[]"]');
         const hasImage = imageInput && imageInput.files && imageInput.files[0];
-        return { title, layout, hasImage };
+        return { title, hasImage };
       });
 
       // Photos (preview only already selected files)
@@ -422,20 +407,10 @@
       // Border image
       const borderImg = themeBorders[theme] ? `<img src="${themeBorders[theme]}" class="border-img" alt="Theme border" style="width:100%;max-width:700px;height:24px;display:block;margin-bottom:18px;">` : '';
 
-      // Cast display based on layout
+      // Cast display - always use centered list layout
       let castHtml = '';
-      if (creditsLayout === 'grid') {
-        castHtml = cast.map(c => 
-          `<div style="display:inline-block; margin:10px; text-align:center; width:120px;">
-            ${c.hasPhoto ? '<div style="width:80px;height:80px;background:#ddd;margin:0 auto 5px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;">Photo</div>' : ''}
-            <div style="font-weight:bold;">${c.name}</div>
-            <div style="color:#888;font-size:14px;">${c.role}</div>
-          </div>`
-        ).join('');
-      } else {
-        castHtml = cast.map(c => `<li>${c.name} <span style="color:#888;">(${c.role})</span></li>`).join('');
-        castHtml = `<ul style="padding-left:24px;">${castHtml}</ul>`;
-      }
+      castHtml = cast.map(c => `<li>${c.name} <span style="color:#888;">(${c.role})</span></li>`).join('');
+      castHtml = `<ul style="padding-left:0; text-align:center; list-style:none;">${castHtml}</ul>`;
 
       document.getElementById('programme-preview').innerHTML = `
         <div style="background:${t.bg};border-radius:12px;padding:32px;box-shadow:0 0 16px #eee;">
@@ -467,10 +442,10 @@
           
           <!-- Credits Section -->
           <div style="margin-bottom:30px;">
-            <h3 style="color:${t.heading};">Cast (${creditsLayout} layout)</h3>
+            <h3 style="color:${t.heading};">Cast</h3>
             ${castHtml}
             <h3 style="color:${t.heading};margin-top:18px;">Crew</h3>
-            <ul style="padding-left:24px;">${crew.map(c=>`<li>${c.name} <span style="color:#888;">(${c.role})</span></li>`).join('')}</ul>
+            <ul style="padding-left:0; text-align:center; list-style:none;">${crew.map(c=>`<li>${c.name} <span style="color:#888;">(${c.role})</span></li>`).join('')}</ul>
           </div>
           
           <!-- Director's Note Section -->
@@ -491,12 +466,11 @@
           ${adverts.length > 0 ? `
             <div style="margin-bottom:30px;">
               <h3 style="color:${t.heading};">Adverts</h3>
-              <div style="display:flex; flex-wrap:wrap; gap:10px;">
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:15px;">
                 ${adverts.map(a => `
-                  <div style="border:1px solid #ddd; padding:10px; border-radius:5px; ${a.layout === 'full' ? 'width:100%' : a.layout === 'half' ? 'width:48%' : 'width:30%'};">
-                    <div style="font-weight:bold; margin-bottom:5px;">${a.title}</div>
-                    <div style="font-size:12px; color:#666;">${a.layout} page</div>
-                    ${a.hasImage ? '<div style="background:#eee; height:60px; display:flex; align-items:center; justify-content:center; margin-top:5px;">Ad Image</div>' : ''}
+                  <div style="border:1px solid #ddd; padding:15px; border-radius:5px; background:#fff;">
+                    <div style="font-weight:bold; margin-bottom:5px; text-align:center;">${a.title}</div>
+                    ${a.hasImage ? '<div style="background:#eee; height:80px; display:flex; align-items:center; justify-content:center; margin-top:5px; border-radius:3px;">Ad Image</div>' : '<div style="background:#f5f5f5; height:80px; display:flex; align-items:center; justify-content:center; margin-top:5px; border-radius:3px; color:#999;">No Image</div>'}
                   </div>
                 `).join('')}
               </div>

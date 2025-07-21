@@ -129,13 +129,10 @@ button:hover {
   background: #fff;
 }
 .advert-row input[type="text"] {
-  flex: 1 1 30%;
-}
-.advert-row select {
-  flex: 1 1 25%;
+  flex: 1 1 40%;
 }
 .advert-row input[type="file"] {
-  flex: 1 1 25%;
+  flex: 1 1 35%;
 }
 .advert-row .advert-preview-small {
   width: 60px;

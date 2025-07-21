@@ -98,7 +98,6 @@ app.post('/generate', upload.fields(uploadFields), (req, res) => {
     contactInfo,
     directorNote,
     sponsorInfo,
-    creditsLayout = 'list',
     overlayInfo
   } = req.body;
 
@@ -110,7 +109,6 @@ app.post('/generate', upload.fields(uploadFields), (req, res) => {
   
   // Parse advert arrays
   const advertTitles = req.body['advertTitle[]'] || req.body.advertTitle || [];
-  const advertLayouts = req.body['advertLayout[]'] || req.body.advertLayout || [];
 
   // Normalize arrays
   const cast = Array.isArray(castNames)
@@ -132,12 +130,10 @@ app.post('/generate', upload.fields(uploadFields), (req, res) => {
   const adverts = Array.isArray(advertTitles)
     ? advertTitles.map((title, i) => ({
         title,
-        layout: advertLayouts[i] || 'full',
         image: req.files && req.files.advertImage && req.files.advertImage[i] ? req.files.advertImage[i].path : null
       }))
     : advertTitles ? [{
         title: advertTitles,
-        layout: advertLayouts || 'full',
         image: req.files && req.files.advertImage && req.files.advertImage[0] ? req.files.advertImage[0].path : null
       }] : [];
 
@@ -184,38 +180,68 @@ app.post('/generate', upload.fields(uploadFields), (req, res) => {
   addThemedBorder();
 
   // Logo (top-left corner if available)
-  if (logoFile && fs.existsSync(logoFile.path)) {
-    try {
-      doc.image(logoFile.path, doc.page.margins.left, doc.y, {
-        fit: [80, 40],
-        align: 'left'
-      });
-    } catch (err) {
-      console.log('Error loading logo:', err);
+  if (logoFile) {
+    if (fs.existsSync(logoFile.path)) {
+      try {
+        doc.image(logoFile.path, doc.page.margins.left, doc.y, {
+          fit: [80, 40],
+          align: 'left'
+        });
+      } catch (err) {
+        console.log('Error loading logo:', err);
+        // Draw placeholder
+        doc.rect(doc.page.margins.left, doc.y, 80, 40).fillColor('#f0f0f0').fill();
+        doc.fontSize(8).fillColor('#666')
+          .text('Logo', doc.page.margins.left, doc.y + 15, { width: 80, align: 'center' });
+      }
+    } else {
+      // Draw placeholder for missing logo
+      doc.rect(doc.page.margins.left, doc.y, 80, 40).fillColor('#f0f0f0').fill();
+      doc.fontSize(8).fillColor('#666')
+        .text('Logo', doc.page.margins.left, doc.y + 15, { width: 80, align: 'center' });
     }
   }
 
   // Cover image (if available and large)
-  if (coverFile && fs.existsSync(coverFile.path)) {
-    try {
+  if (coverFile) {
+    if (fs.existsSync(coverFile.path)) {
+      try {
+        doc.addPage({ size: 'A5', margin: 0 }); // No margin for full bleed
+        doc.image(coverFile.path, 0, 0, {
+          width: doc.page.width,
+          height: doc.page.height
+        });
+        if (overlayInfo) {
+          // Add overlay info at bottom with padding
+          doc.fontSize(16).fillColor('white').font(t.font)
+            .text(playName || 'Play Name', 40, doc.page.height - 100, { 
+              align: 'center',
+              width: doc.page.width - 80
+            });
+          doc.fontSize(12).text(`${date || ''} | ${venue || ''}`, { align: 'center' });
+        }
+      } catch (err) {
+        console.log('Error loading cover image:', err);
+        // Create a placeholder cover page
+        doc.addPage({ size: 'A5', margin: 40 });
+        addThemedBorder();
+        doc.rect(doc.page.margins.left, doc.y, doc.page.width - 80, 200).fillColor('#f0f0f0').fill();
+        doc.fontSize(14).fillColor('#666')
+          .text('Cover Image\nNot Available', doc.page.margins.left, doc.y + 80, { 
+            width: doc.page.width - 80, 
+            align: 'center' 
+          });
+      }
+    } else {
+      // Create a placeholder cover page for missing file
       doc.addPage({ size: 'A5', margin: 40 });
       addThemedBorder();
-      doc.image(coverFile.path, {
-        fit: [doc.page.width - 80, doc.page.height - 120],
-        align: 'center',
-        valign: 'center'
-      });
-      if (overlayInfo) {
-        // Add overlay info at bottom
-        doc.fontSize(16).fillColor('white').font(t.font)
-          .text(playName || 'Play Name', doc.page.margins.left, doc.page.height - 100, { 
-            align: 'center',
-            width: doc.page.width - doc.page.margins.left - doc.page.margins.right
-          });
-        doc.fontSize(12).text(`${date || ''} | ${venue || ''}`, { align: 'center' });
-      }
-    } catch (err) {
-      console.log('Error loading cover image:', err);
+      doc.rect(doc.page.margins.left, doc.y, doc.page.width - 80, 200).fillColor('#f0f0f0').fill();
+      doc.fontSize(14).fillColor('#666')
+        .text('Cover Image\nNot Available', doc.page.margins.left, doc.y + 80, { 
+          width: doc.page.width - 80, 
+          align: 'center' 
+        });
     }
   }
 
@@ -262,67 +288,22 @@ app.post('/generate', upload.fields(uploadFields), (req, res) => {
   doc.fontSize(15).fillColor(t.heading).text('Cast:', { underline: true });
   doc.moveDown(0.3);
   
-  if (creditsLayout === 'grid' && cast.some(p => p.photo)) {
-    // Photo grid layout
-    let x = doc.page.margins.left;
-    let y = doc.y;
-    const photoSize = 60;
-    const spacing = 90;
-    let col = 0;
-    const maxCols = 3;
-
-    cast.forEach(person => {
-      if (person.name && person.role) {
-        if (col >= maxCols) {
-          col = 0;
-          x = doc.page.margins.left;
-          y += 100;
-        }
-
-        // Photo
-        if (person.photo && fs.existsSync(person.photo)) {
-          try {
-            doc.image(person.photo, x, y, {
-              fit: [photoSize, photoSize],
-              align: 'center'
-            });
-          } catch (err) {
-            doc.rect(x, y, photoSize, photoSize).fillColor('#eee').fill();
-          }
-        } else {
-          doc.rect(x, y, photoSize, photoSize).fillColor('#eee').fill();
-        }
-
-        // Name and role
-        doc.fontSize(9).fillColor(t.color)
-          .text(person.name, x, y + photoSize + 5, { width: photoSize, align: 'center' });
-        doc.fontSize(8).fillColor('#666')
-          .text(person.role, x, y + photoSize + 18, { width: photoSize, align: 'center' });
-
-        x += spacing;
-        col++;
-      }
-    });
-    
-    doc.y = y + 120; // Move past the grid
-  } else {
-    // List layout
-    doc.fontSize(11).fillColor(t.color);
-    cast.forEach(person => {
-      if (person.name && person.role) {
-        doc.text(`${person.name} ....... ${person.role}`);
-      }
-    });
-  }
+  // Always use list layout for cast (centered)
+  doc.fontSize(11).fillColor(t.color);
+  cast.forEach(person => {
+    if (person.name && person.role) {
+      doc.text(`${person.name} ....... ${person.role}`, { align: 'center' });
+    }
+  });
   
   doc.moveDown();
 
   // Crew section
-  doc.fontSize(15).fillColor(t.heading).text('Crew:', { underline: true });
+  doc.fontSize(15).fillColor(t.heading).text('Crew:', { underline: true, align: 'center' });
   doc.fontSize(11).fillColor(t.color);
   crew.forEach(person => {
     if (person.name && person.role) {
-      doc.text(`${person.name} ....... ${person.role}`);
+      doc.text(`${person.name} ....... ${person.role}`, { align: 'center' });
     }
   });
 
@@ -336,14 +317,25 @@ app.post('/generate', upload.fields(uploadFields), (req, res) => {
     addSeparator();
 
     // Director photo (if available)
-    if (directorPhotoFile && fs.existsSync(directorPhotoFile.path)) {
-      try {
-        doc.image(directorPhotoFile.path, doc.page.width - doc.page.margins.right - 80, doc.y, {
-          fit: [80, 80],
-          align: 'right'
-        });
-      } catch (err) {
-        console.log('Error loading director photo:', err);
+    if (directorPhotoFile) {
+      if (fs.existsSync(directorPhotoFile.path)) {
+        try {
+          doc.image(directorPhotoFile.path, doc.page.width - doc.page.margins.right - 80, doc.y, {
+            fit: [80, 80],
+            align: 'right'
+          });
+        } catch (err) {
+          console.log('Error loading director photo:', err);
+          // Draw placeholder
+          doc.rect(doc.page.width - doc.page.margins.right - 80, doc.y, 80, 80).fillColor('#f0f0f0').fill();
+          doc.fontSize(8).fillColor('#666')
+            .text('Photo', doc.page.width - doc.page.margins.right - 80, doc.y + 35, { width: 80, align: 'center' });
+        }
+      } else {
+        // Draw placeholder for missing photo
+        doc.rect(doc.page.width - doc.page.margins.right - 80, doc.y, 80, 80).fillColor('#f0f0f0').fill();
+        doc.fontSize(8).fillColor('#666')
+          .text('Photo', doc.page.width - doc.page.margins.right - 80, doc.y + 35, { width: 80, align: 'center' });
       }
     }
 
@@ -364,29 +356,63 @@ app.post('/generate', upload.fields(uploadFields), (req, res) => {
     doc.moveDown();
     addSeparator();
 
-    // Adverts
+    // Adverts - arrange in grid (up to 4 per page)
     if (adverts.length > 0) {
-      adverts.forEach(advert => {
-        if (advert.title) {
-          const width = advert.layout === 'full' ? doc.page.width - 80 : 
-                       advert.layout === 'half' ? (doc.page.width - 100) / 2 : 
-                       (doc.page.width - 120) / 3;
-          
-          doc.fontSize(14).fillColor(t.heading).text(advert.title);
-          
-          if (advert.image && fs.existsSync(advert.image)) {
-            try {
-              doc.image(advert.image, {
-                fit: [width, advert.layout === 'quarter' ? 80 : 120],
-                align: 'left'
-              });
-            } catch (err) {
-              doc.fontSize(10).fillColor('red').text('Error loading advert image');
+      const advertsPerPage = 4;
+      const pages = Math.ceil(adverts.length / advertsPerPage);
+      
+      for (let page = 0; page < pages; page++) {
+        if (page > 0) {
+          doc.addPage({ size: 'A5', margin: 40 });
+          addThemedBorder();
+          doc.fontSize(18).fillColor(t.heading).text('Adverts (continued)', { align: 'center' });
+          doc.moveDown();
+          addSeparator();
+        }
+        
+        const startIdx = page * advertsPerPage;
+        const endIdx = Math.min(startIdx + advertsPerPage, adverts.length);
+        const pageAdverts = adverts.slice(startIdx, endIdx);
+        
+        // Grid layout: 2x2
+        const gridWidth = (doc.page.width - doc.page.margins.left - doc.page.margins.right - 20) / 2;
+        const gridHeight = 100;
+        const startX = doc.page.margins.left;
+        const startY = doc.y;
+        
+        pageAdverts.forEach((advert, idx) => {
+          if (advert.title) {
+            const col = idx % 2;
+            const row = Math.floor(idx / 2);
+            const x = startX + col * (gridWidth + 20);
+            const y = startY + row * (gridHeight + 30);
+            
+            // Title
+            doc.fontSize(12).fillColor(t.heading)
+              .text(advert.title, x, y, { width: gridWidth, align: 'center' });
+            
+            // Image or placeholder
+            if (advert.image && fs.existsSync(advert.image)) {
+              try {
+                doc.image(advert.image, x, y + 20, {
+                  fit: [gridWidth, gridHeight - 20],
+                  align: 'center'
+                });
+              } catch (err) {
+                doc.rect(x, y + 20, gridWidth, gridHeight - 20).fillColor('#eee').fill();
+                doc.fontSize(8).fillColor('#666')
+                  .text('Image error', x, y + 50, { width: gridWidth, align: 'center' });
+              }
+            } else {
+              doc.rect(x, y + 20, gridWidth, gridHeight - 20).fillColor('#f5f5f5').fill();
+              doc.fontSize(8).fillColor('#999')
+                .text('No image', x, y + 50, { width: gridWidth, align: 'center' });
             }
           }
-          doc.moveDown();
-        }
-      });
+        });
+        
+        doc.y = startY + Math.ceil(pageAdverts.length / 2) * (gridHeight + 30) + 20;
+      }
     }
 
     // Sponsors
