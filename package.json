@@ -1,0 +1,17 @@
+{
+  "name": "a5-programme-generator",
+  "version": "1.0.0",
+  "description": "Express/EJS app for generating themed A5 play programmes as PDFs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "monsterlimo",
+  "license": "MIT",
+  "dependencies": {
+    "ejs": "^3.1.9",
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1",
+    "pdfkit": "^0.15.0"
+  }
+}

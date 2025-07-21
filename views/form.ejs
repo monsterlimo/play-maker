@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>A5 Programme Generator</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>A5 Programme Generator</h1>
+    <button id="loadSampleBtn" type="button" style="margin-bottom:18px;">Load Sample Data</button>
+    <form id="programmeForm" action="/generate" method="POST" enctype="multipart/form-data">
+      <label for="theme">Theme:</label>
+      <select id="theme" name="theme" required>
+        <option value="classic">Classic</option>
+        <option value="fairy">Fairy</option>
+        <option value="forest">Forest</option>
+        <option value="arabian">Arabian</option>
+        <option value="spy">Spy</option>
+        <option value="drama">Drama</option>
+      </select><br>
+
+      <label for="playName">Play Name:</label>
+      <input type="text" id="playName" name="playName" required placeholder="e.g. Romeo & Juliet"><br>
+
+      <label for="date">Date:</label>
+      <input type="text" id="date" name="date" required placeholder="e.g. 12 March 2025"><br>
+
+      <label for="venue">Venue:</label>
+      <input type="text" id="venue" name="venue" required placeholder="e.g. Globe Theatre"><br>
+
+      <label for="director">Director:</label>
+      <input type="text" id="director" name="director" required placeholder="e.g. Jane Doe"><br>
+
+      <label for="synopsis">Synopsis:</label>
+      <textarea id="synopsis" name="synopsis" rows="4" cols="40" required placeholder="Brief summary of the play"></textarea><br>
+
+      <label>Cast:</label>
+      <div id="cast-container"></div>
+      <button id="addCastBtn" type="button">Add Cast Member</button>
+      <br>
+
+      <label>Crew:</label>
+      <div id="crew-container"></div>
+      <button id="addCrewBtn" type="button">Add Crew Member</button>
+      <br>
+
+      <label for="photos">Photos (up to 4):</label>
+      <input type="file" id="photos" name="photos" accept="image/*" multiple><br>
+      <div id="photo-preview"></div>
+      <br>
+
+      <button type="submit">Generate PDF</button>
+    </form>
+    <button id="previewBtn" type="button" style="margin-top:18px;">Preview Programme</button>
+    <div id="programme-preview" style="margin-top:32px;"></div>
+    <small>Tip: Use “Load Sample Data” for quick testing. You can add/remove cast and crew rows. All fields are required for each person.</small>
+  </div>
+  <script>
+    // Map theme to border path
+    const themeBorders = {
+      classic: '/theme-assets/classic-border.png',
+      fairy: '/theme-assets/fairy-border.png',
+      forest: '/theme-assets/forest-border.png',
+      arabian: '/theme-assets/arabian-border.png',
+      spy: '/theme-assets/spy-border.png',
+      drama: '/theme-assets/drama-border.png'
+    };
+
+    function addRow(section, name = '', role = '') {
+      const container = document.getElementById(section + '-container');
+      const count = container.children.length;
+      if (count < 15) {
+        const row = document.createElement('div');
+        row.className = 'person-row';
+        row.innerHTML = `
+          <input type="text" name="${section}Name[]" placeholder="Name" required value="${name}">
+          <input type="text" name="${section}Role[]" placeholder="Role" required value="${role}">
+          <button type="button" class="removeBtn">Remove</button>
+        `;
+        container.appendChild(row);
+      }
+    }
+
+    function previewPhotos() {
+      const input = document.getElementById('photos');
+      const preview = document.getElementById('photo-preview');
+      preview.innerHTML = '';
+      Array.from(input.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.style.maxWidth = "100px";
+          img.style.margin = "6px";
+          preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function loadSample() {
+      document.getElementById('theme').value = 'fairy';
+      document.getElementById('playName').value = 'The Enchanted Woods';
+      document.getElementById('date').value = '25 October 2025';
+      document.getElementById('venue').value = 'Mystic Grove Theatre';
+      document.getElementById('director').value = 'Faye Moon';
+      document.getElementById('synopsis').value = 'A magical journey through a forest of dreams where fairies help lost travellers discover their true selves.';
+
+      // Clear existing rows
+      document.getElementById('cast-container').innerHTML = '';
+      document.getElementById('crew-container').innerHTML = '';
+
+      // Add sample cast
+      addRow('cast', 'Luna Stardust', 'Fairy Queen');
+      addRow('cast', 'Rowan Leaf', 'Lost Traveller');
+      addRow('cast', 'Moss Green', 'Forest Guardian');
+
+      // Add sample crew
+      addRow('crew', 'Willow Fern', 'Stage Manager');
+      addRow('crew', 'Bramble Root', 'Set Designer');
+      addRow('crew', 'Sunny Dew', 'Lighting');
+
+      // Clear photo preview
+      document.getElementById('photo-preview').innerHTML = '';
+      showPreview(); // Update preview
+    }
+
+    // Live HTML preview
+    function showPreview() {
+      const theme = document.getElementById('theme').value;
+      const playName = document.getElementById('playName').value;
+      const date = document.getElementById('date').value;
+      const venue = document.getElementById('venue').value;
+      const director = document.getElementById('director').value;
+      const synopsis = document.getElementById('synopsis').value;
+
+      // Cast & Crew
+      const castRows = document.querySelectorAll('#cast-container .person-row');
+      const cast = Array.from(castRows).map(row =>
+        `${row.querySelector('input[name="castName[]"]').value} <span style="color:#888;">(${row.querySelector('input[name="castRole[]"]').value})</span>`
+      );
+      const crewRows = document.querySelectorAll('#crew-container .person-row');
+      const crew = Array.from(crewRows).map(row =>
+        `${row.querySelector('input[name="crewName[]"]').value} <span style="color:#888;">(${row.querySelector('input[name="crewRole[]"]').value})</span>`
+      );
+
+      // Photos (preview only already selected files)
+      const photoInput = document.getElementById('photos');
+      let photosHtml = '';
+      if (photoInput.files.length) {
+        for (let i = 0; i < photoInput.files.length; i++) {
+          const file = photoInput.files[i];
+          const url = URL.createObjectURL(file);
+          photosHtml += `<img src="${url}" style="max-width:120px; margin:8px; border-radius:7px; border:2px solid #ccc;">`;
+        }
+      }
+
+      // Theme colors
+      const themeStyles = {
+        classic: { bg: '#fff', heading: '#222', accent: '#007bff' },
+        fairy:   { bg: '#f7cafc', heading: '#b050b0', accent: '#e070e0' },
+        forest:  { bg: '#d4ecd1', heading: '#145914', accent: '#228B22' },
+        arabian: { bg: '#fffbe6', heading: '#CFA100', accent: '#FFD700' },
+        spy:     { bg: '#e4e4e4', heading: '#222', accent: '#444' },
+        drama:   { bg: '#ffe5e5', heading: '#7A1818', accent: '#B22222' }
+      };
+      const t = themeStyles[theme] || themeStyles.classic;
+
+      // Border image
+      const borderImg = themeBorders[theme] ? `<img src="${themeBorders[theme]}" class="border-img" alt="Theme border" style="width:100%;max-width:700px;height:24px;display:block;margin-bottom:18px;">` : '';
+
+      document.getElementById('programme-preview').innerHTML = `
+        <div style="background:${t.bg};border-radius:12px;padding:32px;box-shadow:0 0 16px #eee;">
+          ${borderImg}
+          <h2 style="color:${t.heading};margin-bottom:0;">${playName}</h2>
+          <div style="margin-bottom:10px;">
+            <span style="color:${t.accent};font-weight:bold;">${date}</span> |
+            <span style="color:${t.accent};font-weight:bold;">${venue}</span> |
+            <span style="color:${t.accent};font-weight:bold;">Director: ${director}</span>
+          </div>
+          <hr>
+          <h3 style="color:${t.heading};">Synopsis</h3>
+          <p>${synopsis}</p>
+          <h3 style="color:${t.heading};margin-top:18px;">Cast</h3>
+          <ul style="padding-left:24px;">${cast.map(c=>`<li>${c}</li>`).join('')}</ul>
+          <h3 style="color:${t.heading};margin-top:18px;">Crew</h3>
+          <ul style="padding-left:24px;">${crew.map(c=>`<li>${c}</li>`).join('')}</ul>
+          <h3 style="color:${t.heading};margin-top:18px;">Photos</h3>
+          <div>${photosHtml}</div>
+        </div>
+      `;
+    }
+
+    window.onload = function() {
+      addRow('cast');
+      addRow('crew');
+      document.getElementById('loadSampleBtn').addEventListener('click', loadSample);
+      document.getElementById('addCastBtn').addEventListener('click', function() { addRow('cast'); });
+      document.getElementById('addCrewBtn').addEventListener('click', function() { addRow('crew'); });
+      document.getElementById('previewBtn').addEventListener('click', showPreview);
+      document.getElementById('photos').addEventListener('change', function() {
+        previewPhotos();
+        showPreview();
+      });
+      document.getElementById('programmeForm').addEventListener('input', showPreview);
+
+      // Remove cast/crew row
+      document.getElementById('cast-container').addEventListener('click', function(e) {
+        if (e.target.classList.contains('removeBtn')) {
+          e.target.parentNode.remove();
+          showPreview();
+        }
+      });
+      document.getElementById('crew-container').addEventListener('click', function(e) {
+        if (e.target.classList.contains('removeBtn')) {
+          e.target.parentNode.remove();
+          showPreview();
+        }
+      });
+    };
+  </script>
+</body>
+</html>

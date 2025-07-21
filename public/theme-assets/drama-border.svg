@@ -1,0 +1,6 @@
+<svg width="700" height="24" xmlns="http://www.w3.org/2000/svg">
+  <rect width="700" height="24" fill="#ffe5e5"/>
+  <text x="350" y="18" text-anchor="middle" font-size="18" fill="#B22222" font-family="serif">🎭 Drama 🎭</text>
+  <rect x="40" y="8" width="20" height="8" fill="#B22222"/>
+  <rect x="640" y="8" width="20" height="8" fill="#B22222"/>
+</svg>

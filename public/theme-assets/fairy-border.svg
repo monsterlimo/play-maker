@@ -1,0 +1,6 @@
+<svg width="700" height="24" xmlns="http://www.w3.org/2000/svg">
+  <rect width="700" height="24" fill="#f7cafc"/>
+  <text x="350" y="18" text-anchor="middle" font-size="18" fill="#e070e0" font-family="cursive">✨🧚 Fairy ✨</text>
+  <circle cx="40" cy="12" r="6" fill="#e070e0" opacity="0.6"/>
+  <circle cx="660" cy="12" r="4" fill="#b050b0" opacity="0.5"/>
+</svg>
