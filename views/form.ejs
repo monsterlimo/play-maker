@@ -9,45 +9,107 @@
     <h1>A5 Programme Generator</h1>
     <button id="loadSampleBtn" type="button" style="margin-bottom:18px;">Load Sample Data</button>
     <form id="programmeForm" action="/generate" method="POST" enctype="multipart/form-data">
-      <label for="theme">Theme:</label>
-      <select id="theme" name="theme" required>
-        <option value="classic">Classic</option>
-        <option value="fairy">Fairy</option>
-        <option value="forest">Forest</option>
-        <option value="arabian">Arabian</option>
-        <option value="spy">Spy</option>
-        <option value="drama">Drama</option>
-      </select><br>
+      
+      <!-- General Settings -->
+      <fieldset class="form-section">
+        <legend>General Settings</legend>
+        <label for="theme">Theme:</label>
+        <select id="theme" name="theme" required>
+          <option value="classic">Classic</option>
+          <option value="fairy">Fairy</option>
+          <option value="forest">Forest</option>
+          <option value="arabian">Arabian</option>
+          <option value="spy">Spy</option>
+          <option value="drama">Drama</option>
+        </select><br>
 
-      <label for="playName">Play Name:</label>
-      <input type="text" id="playName" name="playName" required placeholder="e.g. Romeo & Juliet"><br>
+        <label for="playName">Play Name:</label>
+        <input type="text" id="playName" name="playName" required placeholder="e.g. Romeo & Juliet"><br>
 
-      <label for="date">Date:</label>
-      <input type="text" id="date" name="date" required placeholder="e.g. 12 March 2025"><br>
+        <label for="date">Date:</label>
+        <input type="text" id="date" name="date" required placeholder="e.g. 12 March 2025"><br>
 
-      <label for="venue">Venue:</label>
-      <input type="text" id="venue" name="venue" required placeholder="e.g. Globe Theatre"><br>
+        <label for="venue">Venue:</label>
+        <input type="text" id="venue" name="venue" required placeholder="e.g. Globe Theatre"><br>
 
-      <label for="director">Director:</label>
-      <input type="text" id="director" name="director" required placeholder="e.g. Jane Doe"><br>
+        <label for="director">Director:</label>
+        <input type="text" id="director" name="director" required placeholder="e.g. Jane Doe"><br>
 
-      <label for="synopsis">Synopsis:</label>
-      <textarea id="synopsis" name="synopsis" rows="4" cols="40" required placeholder="Brief summary of the play"></textarea><br>
+        <label for="synopsis">Synopsis:</label>
+        <textarea id="synopsis" name="synopsis" rows="4" cols="40" required placeholder="Brief summary of the play"></textarea><br>
+      </fieldset>
 
-      <label>Cast:</label>
-      <div id="cast-container"></div>
-      <button id="addCastBtn" type="button">Add Cast Member</button>
-      <br>
+      <!-- Front Cover Section -->
+      <fieldset class="form-section">
+        <legend>Front Cover</legend>
+        <label for="logo">Logo Upload:</label>
+        <input type="file" id="logo" name="logo" accept="image/*"><br>
+        <div id="logo-preview"></div>
 
-      <label>Crew:</label>
-      <div id="crew-container"></div>
-      <button id="addCrewBtn" type="button">Add Crew Member</button>
-      <br>
+        <label for="coverImage">Cover Image:</label>
+        <input type="file" id="coverImage" name="coverImage" accept="image/*"><br>
+        <div id="cover-preview"></div>
 
-      <label for="photos">Photos (up to 4):</label>
-      <input type="file" id="photos" name="photos" accept="image/*" multiple><br>
-      <div id="photo-preview"></div>
-      <br>
+        <label>
+          <input type="checkbox" id="overlayInfo" name="overlayInfo" value="true">
+          Show overlay info on cover (uncheck if info is already in the image)
+        </label><br>
+
+        <label for="contactInfo">Contact Information:</label>
+        <textarea id="contactInfo" name="contactInfo" rows="3" placeholder="Box office, phone, website, etc."></textarea><br>
+      </fieldset>
+
+      <!-- Credits Section -->
+      <fieldset class="form-section">
+        <legend>Credits</legend>
+        <label for="creditsLayout">Credits Layout:</label>
+        <select id="creditsLayout" name="creditsLayout">
+          <option value="list">List Layout</option>
+          <option value="grid">Photo Grid Layout</option>
+        </select><br>
+
+        <label>Cast:</label>
+        <div id="cast-container"></div>
+        <button id="addCastBtn" type="button">Add Cast Member</button>
+        <br>
+
+        <label>Crew:</label>
+        <div id="crew-container"></div>
+        <button id="addCrewBtn" type="button">Add Crew Member</button>
+        <br>
+      </fieldset>
+
+      <!-- Director's Note Section -->
+      <fieldset class="form-section">
+        <legend>Director's Note</legend>
+        <label for="directorNote">Director's Note:</label>
+        <textarea id="directorNote" name="directorNote" rows="6" placeholder="Personal message from the director..."></textarea><br>
+
+        <label for="directorPhoto">Director Photo:</label>
+        <input type="file" id="directorPhoto" name="directorPhoto" accept="image/*"><br>
+        <div id="director-photo-preview"></div>
+      </fieldset>
+
+      <!-- Adverts & Sponsors Section -->
+      <fieldset class="form-section">
+        <legend>Adverts & Sponsors</legend>
+        <label>Adverts:</label>
+        <div id="adverts-container"></div>
+        <button id="addAdvertBtn" type="button">Add Advert</button>
+        <br>
+
+        <label for="sponsorInfo">Sponsor Information:</label>
+        <textarea id="sponsorInfo" name="sponsorInfo" rows="4" placeholder="Thank you to our sponsors..."></textarea><br>
+      </fieldset>
+
+      <!-- Additional Photos Section -->
+      <fieldset class="form-section">
+        <legend>Additional Photos</legend>
+        <label for="photos">Additional Photos (up to 4):</label>
+        <input type="file" id="photos" name="photos" accept="image/*" multiple><br>
+        <div id="photo-preview"></div>
+        <br>
+      </fieldset>
 
       <button type="submit">Generate PDF</button>
     </form>
@@ -66,18 +128,73 @@
       drama: '/theme-assets/drama-border.png'
     };
 
-    function addRow(section, name = '', role = '') {
+    function addRow(section, name = '', role = '', photoPath = '') {
       const container = document.getElementById(section + '-container');
       const count = container.children.length;
       if (count < 15) {
         const row = document.createElement('div');
         row.className = 'person-row';
+        const castPhotoField = section === 'cast' ? `<input type="file" name="${section}Photo[]" accept="image/*" class="photo-input" placeholder="Photo"><div class="photo-preview-small"></div>` : '';
         row.innerHTML = `
           <input type="text" name="${section}Name[]" placeholder="Name" required value="${name}">
           <input type="text" name="${section}Role[]" placeholder="Role" required value="${role}">
+          ${castPhotoField}
           <button type="button" class="removeBtn">Remove</button>
         `;
         container.appendChild(row);
+        
+        // Add event listener for photo preview if this is a cast member
+        if (section === 'cast') {
+          const photoInput = row.querySelector('.photo-input');
+          const photoPreview = row.querySelector('.photo-preview-small');
+          photoInput.addEventListener('change', function() {
+            previewSinglePhoto(this, photoPreview);
+          });
+        }
+      }
+    }
+
+    function previewSinglePhoto(input, previewContainer) {
+      previewContainer.innerHTML = '';
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.style.maxWidth = "50px";
+          img.style.maxHeight = "50px";
+          img.style.borderRadius = "4px";
+          previewContainer.appendChild(img);
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function addAdvert(title = '', layout = 'full') {
+      const container = document.getElementById('adverts-container');
+      const count = container.children.length;
+      if (count < 10) {
+        const row = document.createElement('div');
+        row.className = 'advert-row';
+        row.innerHTML = `
+          <input type="text" name="advertTitle[]" placeholder="Advert Title" value="${title}">
+          <select name="advertLayout[]">
+            <option value="full" ${layout === 'full' ? 'selected' : ''}>Full Page</option>
+            <option value="half" ${layout === 'half' ? 'selected' : ''}>Half Page</option>
+            <option value="quarter" ${layout === 'quarter' ? 'selected' : ''}>Quarter Page</option>
+          </select>
+          <input type="file" name="advertImage[]" accept="image/*" class="advert-image">
+          <div class="advert-preview-small"></div>
+          <button type="button" class="removeAdvertBtn">Remove</button>
+        `;
+        container.appendChild(row);
+        
+        // Add event listener for photo preview
+        const photoInput = row.querySelector('.advert-image');
+        const photoPreview = row.querySelector('.advert-preview-small');
+        photoInput.addEventListener('change', function() {
+          previewSinglePhoto(this, photoPreview);
+        });
       }
     }
 
@@ -98,6 +215,24 @@
       });
     }
 
+    function previewLogo() {
+      const input = document.getElementById('logo');
+      const preview = document.getElementById('logo-preview');
+      previewSinglePhoto(input, preview);
+    }
+
+    function previewCover() {
+      const input = document.getElementById('coverImage');
+      const preview = document.getElementById('cover-preview');
+      previewSinglePhoto(input, preview);
+    }
+
+    function previewDirectorPhoto() {
+      const input = document.getElementById('directorPhoto');
+      const preview = document.getElementById('director-photo-preview');
+      previewSinglePhoto(input, preview);
+    }
+
     function loadSample() {
       document.getElementById('theme').value = 'fairy';
       document.getElementById('playName').value = 'The Enchanted Woods';
@@ -106,9 +241,23 @@
       document.getElementById('director').value = 'Faye Moon';
       document.getElementById('synopsis').value = 'A magical journey through a forest of dreams where fairies help lost travellers discover their true selves.';
 
+      // Front cover section
+      document.getElementById('overlayInfo').checked = true;
+      document.getElementById('contactInfo').value = 'Box Office: 555-MAGIC\nwww.mysticgrove.com\nTickets £15-25';
+
+      // Director's note
+      document.getElementById('directorNote').value = 'Welcome to our magical world! This production has been a labour of love, bringing together talented performers to create something truly special. We hope you enjoy this enchanting journey.';
+
+      // Credits layout
+      document.getElementById('creditsLayout').value = 'grid';
+
+      // Sponsor info
+      document.getElementById('sponsorInfo').value = 'Special thanks to our sponsors: Moonbeam Catering, Starlight Costumes, and the Arts Council for their generous support.';
+
       // Clear existing rows
       document.getElementById('cast-container').innerHTML = '';
       document.getElementById('crew-container').innerHTML = '';
+      document.getElementById('adverts-container').innerHTML = '';
 
       // Add sample cast
       addRow('cast', 'Luna Stardust', 'Fairy Queen');
@@ -120,8 +269,16 @@
       addRow('crew', 'Bramble Root', 'Set Designer');
       addRow('crew', 'Sunny Dew', 'Lighting');
 
-      // Clear photo preview
+      // Add sample adverts
+      addAdvert('Moonbeam Catering', 'half');
+      addAdvert('Starlight Costumes', 'quarter');
+
+      // Clear photo previews
       document.getElementById('photo-preview').innerHTML = '';
+      document.getElementById('logo-preview').innerHTML = '';
+      document.getElementById('cover-preview').innerHTML = '';
+      document.getElementById('director-photo-preview').innerHTML = '';
+      
       showPreview(); // Update preview
     }
 
@@ -133,16 +290,38 @@
       const venue = document.getElementById('venue').value;
       const director = document.getElementById('director').value;
       const synopsis = document.getElementById('synopsis').value;
+      const contactInfo = document.getElementById('contactInfo').value;
+      const directorNote = document.getElementById('directorNote').value;
+      const sponsorInfo = document.getElementById('sponsorInfo').value;
+      const creditsLayout = document.getElementById('creditsLayout').value;
+      const overlayInfo = document.getElementById('overlayInfo').checked;
 
       // Cast & Crew
       const castRows = document.querySelectorAll('#cast-container .person-row');
-      const cast = Array.from(castRows).map(row =>
-        `${row.querySelector('input[name="castName[]"]').value} <span style="color:#888;">(${row.querySelector('input[name="castRole[]"]').value})</span>`
-      );
+      const cast = Array.from(castRows).map(row => {
+        const name = row.querySelector('input[name="castName[]"]').value;
+        const role = row.querySelector('input[name="castRole[]"]').value;
+        const photoInput = row.querySelector('input[name="castPhoto[]"]');
+        const hasPhoto = photoInput && photoInput.files && photoInput.files[0];
+        return { name, role, hasPhoto };
+      });
+      
       const crewRows = document.querySelectorAll('#crew-container .person-row');
-      const crew = Array.from(crewRows).map(row =>
-        `${row.querySelector('input[name="crewName[]"]').value} <span style="color:#888;">(${row.querySelector('input[name="crewRole[]"]').value})</span>`
-      );
+      const crew = Array.from(crewRows).map(row => {
+        const name = row.querySelector('input[name="crewName[]"]').value;
+        const role = row.querySelector('input[name="crewRole[]"]').value;
+        return { name, role };
+      });
+
+      // Adverts
+      const advertRows = document.querySelectorAll('#adverts-container .advert-row');
+      const adverts = Array.from(advertRows).map(row => {
+        const title = row.querySelector('input[name="advertTitle[]"]').value;
+        const layout = row.querySelector('select[name="advertLayout[]"]').value;
+        const imageInput = row.querySelector('input[name="advertImage[]"]');
+        const hasImage = imageInput && imageInput.files && imageInput.files[0];
+        return { title, layout, hasImage };
+      });
 
       // Photos (preview only already selected files)
       const photoInput = document.getElementById('photos');
@@ -153,6 +332,30 @@
           const url = URL.createObjectURL(file);
           photosHtml += `<img src="${url}" style="max-width:120px; margin:8px; border-radius:7px; border:2px solid #ccc;">`;
         }
+      }
+
+      // Cover and logo previews
+      const logoInput = document.getElementById('logo');
+      const coverInput = document.getElementById('coverImage');
+      const directorPhotoInput = document.getElementById('directorPhoto');
+      
+      let logoHtml = '';
+      let coverHtml = '';
+      let directorPhotoHtml = '';
+      
+      if (logoInput.files && logoInput.files[0]) {
+        const url = URL.createObjectURL(logoInput.files[0]);
+        logoHtml = `<img src="${url}" style="max-width:80px; height:auto; margin:8px;">`;
+      }
+      
+      if (coverInput.files && coverInput.files[0]) {
+        const url = URL.createObjectURL(coverInput.files[0]);
+        coverHtml = `<img src="${url}" style="max-width:200px; height:auto; margin:8px; border-radius:7px;">`;
+      }
+      
+      if (directorPhotoInput.files && directorPhotoInput.files[0]) {
+        const url = URL.createObjectURL(directorPhotoInput.files[0]);
+        directorPhotoHtml = `<img src="${url}" style="max-width:120px; height:auto; margin:8px; border-radius:7px;">`;
       }
 
       // Theme colors
@@ -169,24 +372,102 @@
       // Border image
       const borderImg = themeBorders[theme] ? `<img src="${themeBorders[theme]}" class="border-img" alt="Theme border" style="width:100%;max-width:700px;height:24px;display:block;margin-bottom:18px;">` : '';
 
+      // Cast display based on layout
+      let castHtml = '';
+      if (creditsLayout === 'grid') {
+        castHtml = cast.map(c => 
+          `<div style="display:inline-block; margin:10px; text-align:center; width:120px;">
+            ${c.hasPhoto ? '<div style="width:80px;height:80px;background:#ddd;margin:0 auto 5px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;">Photo</div>' : ''}
+            <div style="font-weight:bold;">${c.name}</div>
+            <div style="color:#888;font-size:14px;">${c.role}</div>
+          </div>`
+        ).join('');
+      } else {
+        castHtml = cast.map(c => `<li>${c.name} <span style="color:#888;">(${c.role})</span></li>`).join('');
+        castHtml = `<ul style="padding-left:24px;">${castHtml}</ul>`;
+      }
+
       document.getElementById('programme-preview').innerHTML = `
         <div style="background:${t.bg};border-radius:12px;padding:32px;box-shadow:0 0 16px #eee;">
-          ${borderImg}
-          <h2 style="color:${t.heading};margin-bottom:0;">${playName}</h2>
-          <div style="margin-bottom:10px;">
-            <span style="color:${t.accent};font-weight:bold;">${date}</span> |
-            <span style="color:${t.accent};font-weight:bold;">${venue}</span> |
-            <span style="color:${t.accent};font-weight:bold;">Director: ${director}</span>
+          
+          <!-- Front Cover Section -->
+          <div style="margin-bottom:30px; border-bottom:2px solid ${t.accent}; padding-bottom:20px;">
+            <h2 style="color:${t.heading}; margin:0;">Front Cover</h2>
+            ${logoHtml ? `<div>Logo: ${logoHtml}</div>` : ''}
+            ${coverHtml ? `<div>Cover Image: ${coverHtml}</div>` : ''}
+            ${overlayInfo ? `
+              <div style="margin-top:15px;">
+                ${borderImg}
+                <h2 style="color:${t.heading};margin-bottom:0;">${playName}</h2>
+                <div style="margin-bottom:10px;">
+                  <span style="color:${t.accent};font-weight:bold;">${date}</span> |
+                  <span style="color:${t.accent};font-weight:bold;">${venue}</span> |
+                  <span style="color:${t.accent};font-weight:bold;">Director: ${director}</span>
+                </div>
+                ${contactInfo ? `<div style="margin-top:10px; font-size:14px; color:${t.heading};">${contactInfo.replace(/\n/g, '<br>')}</div>` : ''}
+              </div>
+            ` : ''}
           </div>
-          <hr>
-          <h3 style="color:${t.heading};">Synopsis</h3>
-          <p>${synopsis}</p>
-          <h3 style="color:${t.heading};margin-top:18px;">Cast</h3>
-          <ul style="padding-left:24px;">${cast.map(c=>`<li>${c}</li>`).join('')}</ul>
-          <h3 style="color:${t.heading};margin-top:18px;">Crew</h3>
-          <ul style="padding-left:24px;">${crew.map(c=>`<li>${c}</li>`).join('')}</ul>
-          <h3 style="color:${t.heading};margin-top:18px;">Photos</h3>
-          <div>${photosHtml}</div>
+          
+          <!-- Synopsis Section -->
+          <div style="margin-bottom:30px;">
+            <h3 style="color:${t.heading};">Synopsis</h3>
+            <p>${synopsis}</p>
+          </div>
+          
+          <!-- Credits Section -->
+          <div style="margin-bottom:30px;">
+            <h3 style="color:${t.heading};">Cast (${creditsLayout} layout)</h3>
+            ${castHtml}
+            <h3 style="color:${t.heading};margin-top:18px;">Crew</h3>
+            <ul style="padding-left:24px;">${crew.map(c=>`<li>${c.name} <span style="color:#888;">(${c.role})</span></li>`).join('')}</ul>
+          </div>
+          
+          <!-- Director's Note Section -->
+          ${directorNote ? `
+            <div style="margin-bottom:30px;">
+              <h3 style="color:${t.heading};">Director's Note</h3>
+              <div style="display:flex; gap:15px; align-items:flex-start;">
+                ${directorPhotoHtml}
+                <div style="flex:1;">
+                  <p style="font-style:italic;">${directorNote.replace(/\n/g, '<br>')}</p>
+                  <p style="text-align:right; margin-top:10px; font-weight:bold;">- ${director}</p>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+          
+          <!-- Adverts Section -->
+          ${adverts.length > 0 ? `
+            <div style="margin-bottom:30px;">
+              <h3 style="color:${t.heading};">Adverts</h3>
+              <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                ${adverts.map(a => `
+                  <div style="border:1px solid #ddd; padding:10px; border-radius:5px; ${a.layout === 'full' ? 'width:100%' : a.layout === 'half' ? 'width:48%' : 'width:30%'};">
+                    <div style="font-weight:bold; margin-bottom:5px;">${a.title}</div>
+                    <div style="font-size:12px; color:#666;">${a.layout} page</div>
+                    ${a.hasImage ? '<div style="background:#eee; height:60px; display:flex; align-items:center; justify-content:center; margin-top:5px;">Ad Image</div>' : ''}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+          
+          <!-- Sponsor Section -->
+          ${sponsorInfo ? `
+            <div style="margin-bottom:30px;">
+              <h3 style="color:${t.heading};">Sponsors</h3>
+              <p>${sponsorInfo.replace(/\n/g, '<br>')}</p>
+            </div>
+          ` : ''}
+          
+          <!-- Additional Photos Section -->
+          ${photosHtml ? `
+            <div>
+              <h3 style="color:${t.heading};">Additional Photos</h3>
+              <div>${photosHtml}</div>
+            </div>
+          ` : ''}
         </div>
       `;
     }
@@ -197,12 +478,30 @@
       document.getElementById('loadSampleBtn').addEventListener('click', loadSample);
       document.getElementById('addCastBtn').addEventListener('click', function() { addRow('cast'); });
       document.getElementById('addCrewBtn').addEventListener('click', function() { addRow('crew'); });
+      document.getElementById('addAdvertBtn').addEventListener('click', function() { addAdvert(); });
       document.getElementById('previewBtn').addEventListener('click', showPreview);
+      
+      // Photo preview event listeners
       document.getElementById('photos').addEventListener('change', function() {
         previewPhotos();
         showPreview();
       });
+      document.getElementById('logo').addEventListener('change', function() {
+        previewLogo();
+        showPreview();
+      });
+      document.getElementById('coverImage').addEventListener('change', function() {
+        previewCover();
+        showPreview();
+      });
+      document.getElementById('directorPhoto').addEventListener('change', function() {
+        previewDirectorPhoto();
+        showPreview();
+      });
+      
+      // Form input event listener for live preview
       document.getElementById('programmeForm').addEventListener('input', showPreview);
+      document.getElementById('programmeForm').addEventListener('change', showPreview);
 
       // Remove cast/crew row
       document.getElementById('cast-container').addEventListener('click', function(e) {
@@ -213,6 +512,14 @@
       });
       document.getElementById('crew-container').addEventListener('click', function(e) {
         if (e.target.classList.contains('removeBtn')) {
+          e.target.parentNode.remove();
+          showPreview();
+        }
+      });
+      
+      // Remove advert
+      document.getElementById('adverts-container').addEventListener('click', function(e) {
+        if (e.target.classList.contains('removeAdvertBtn')) {
           e.target.parentNode.remove();
           showPreview();
         }
