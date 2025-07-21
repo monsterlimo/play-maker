@@ -8,6 +8,7 @@
   <div class="container">
     <h1>A5 Programme Generator</h1>
     <button id="loadSampleBtn" type="button" style="margin-bottom:18px;">Load Sample Data</button>
+    <button id="clearFormBtn" type="button" style="margin-bottom:18px; margin-left:10px; background:#dc3545;">Reset/Clear</button>
     <form id="programmeForm" action="/generate" method="POST" enctype="multipart/form-data">
       
       <!-- General Settings -->
@@ -282,6 +283,55 @@
       showPreview(); // Update preview
     }
 
+    function clearForm() {
+      // Clear all text inputs and textareas
+      document.getElementById('playName').value = '';
+      document.getElementById('date').value = '';
+      document.getElementById('venue').value = '';
+      document.getElementById('director').value = '';
+      document.getElementById('synopsis').value = '';
+      document.getElementById('contactInfo').value = '';
+      document.getElementById('directorNote').value = '';
+      document.getElementById('sponsorInfo').value = '';
+
+      // Reset selects to default values
+      document.getElementById('theme').value = 'classic';
+      document.getElementById('creditsLayout').value = 'list';
+
+      // Reset checkboxes
+      document.getElementById('overlayInfo').checked = false;
+
+      // Clear all file inputs
+      document.getElementById('logo').value = '';
+      document.getElementById('coverImage').value = '';
+      document.getElementById('directorPhoto').value = '';
+      document.getElementById('photos').value = '';
+
+      // Clear all image previews
+      document.getElementById('photo-preview').innerHTML = '';
+      document.getElementById('logo-preview').innerHTML = '';
+      document.getElementById('cover-preview').innerHTML = '';
+      document.getElementById('director-photo-preview').innerHTML = '';
+
+      // Clear dynamic rows and reset to initial state
+      document.getElementById('cast-container').innerHTML = '';
+      document.getElementById('crew-container').innerHTML = '';
+      document.getElementById('adverts-container').innerHTML = '';
+
+      // Add one empty cast and crew row to start with
+      addRow('cast');
+      addRow('crew');
+
+      // Clear any existing advert photo previews
+      const advertPreviews = document.querySelectorAll('.advert-preview-small');
+      advertPreviews.forEach(preview => preview.innerHTML = '');
+
+      // Clear the programme preview
+      document.getElementById('programme-preview').innerHTML = '';
+      
+      showPreview(); // Update preview to show empty state
+    }
+
     // Live HTML preview
     function showPreview() {
       const theme = document.getElementById('theme').value;
@@ -476,6 +526,7 @@
       addRow('cast');
       addRow('crew');
       document.getElementById('loadSampleBtn').addEventListener('click', loadSample);
+      document.getElementById('clearFormBtn').addEventListener('click', clearForm);
       document.getElementById('addCastBtn').addEventListener('click', function() { addRow('cast'); });
       document.getElementById('addCrewBtn').addEventListener('click', function() { addRow('crew'); });
       document.getElementById('addAdvertBtn').addEventListener('click', function() { addAdvert(); });

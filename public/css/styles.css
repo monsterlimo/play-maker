@@ -69,6 +69,14 @@ button:hover {
   background: #0056b3;
 }
 
+/* Clear button styling */
+#clearFormBtn {
+  background: #dc3545 !important;
+}
+#clearFormBtn:hover {
+  background: #c82333 !important;
+}
+
 /* Person rows */
 .person-row {
   display: flex;
