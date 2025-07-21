@@ -49,6 +49,9 @@
 
         <label for="coverImage">Cover Image:</label>
         <input type="file" id="coverImage" name="coverImage" accept="image/*"><br>
+        <!-- AI artwork prototype - Generate AI artwork button -->
+        <button type="button" id="generateAiArtworkBtn" style="margin: 10px 0; background: #6f42c1; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">🎨 Generate AI Artwork</button>
+        <div id="ai-artwork-status" style="margin: 5px 0; font-size: 0.9em; color: #666;"></div>
         <div id="cover-preview"></div>
 
         <label>
@@ -496,6 +499,79 @@
       `;
     }
 
+    // AI artwork prototype - Generate AI artwork function
+    async function generateAiArtwork() {
+      const playName = document.getElementById('playName').value;
+      const synopsis = document.getElementById('synopsis').value;
+      const theme = document.getElementById('theme').value;
+      const statusDiv = document.getElementById('ai-artwork-status');
+      const generateBtn = document.getElementById('generateAiArtworkBtn');
+      
+      if (!playName || !synopsis) {
+        statusDiv.innerHTML = '<span style="color: red;">Please fill in play name and synopsis first.</span>';
+        return;
+      }
+      
+      // Disable button and show loading state
+      generateBtn.disabled = true;
+      generateBtn.innerHTML = '🎨 Generating...';
+      statusDiv.innerHTML = '<span style="color: blue;">Generating AI artwork... This may take 10-30 seconds.</span>';
+      
+      try {
+        const response = await fetch('/generate-ai-artwork', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ playName, synopsis, theme })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // Show the generated image
+          const coverPreview = document.getElementById('cover-preview');
+          coverPreview.innerHTML = `
+            <div style="border: 2px solid #6f42c1; border-radius: 8px; padding: 10px; margin: 10px 0; background: #f8f9fa;">
+              <strong>Generated AI Artwork:</strong><br>
+              <img src="${result.imageUrl}" style="max-width: 200px; height: auto; margin: 8px; border-radius: 7px;" alt="Generated artwork">
+              <br>
+              <button type="button" id="useAiArtworkBtn" style="background: #28a745; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 5px;">Use as Cover Image</button>
+              <div style="font-size: 0.8em; color: #666; margin-top: 5px;">Prompt: ${result.prompt}</div>
+            </div>
+          `;
+          
+          // Add event listener for "Use as Cover Image" button
+          document.getElementById('useAiArtworkBtn').addEventListener('click', function() {
+            // Create a hidden file input to simulate file selection
+            fetch(result.imageUrl)
+              .then(res => res.blob())
+              .then(blob => {
+                const file = new File([blob], 'ai-generated-artwork.png', { type: 'image/png' });
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                document.getElementById('coverImage').files = dt.files;
+                
+                // Trigger the change event to update preview
+                document.getElementById('coverImage').dispatchEvent(new Event('change'));
+                statusDiv.innerHTML = '<span style="color: green;">AI artwork set as cover image!</span>';
+              });
+          });
+          
+          statusDiv.innerHTML = '<span style="color: green;">AI artwork generated successfully!</span>';
+        } else {
+          statusDiv.innerHTML = `<span style="color: orange;">${result.error}</span>`;
+        }
+      } catch (error) {
+        console.error('Error generating AI artwork:', error);
+        statusDiv.innerHTML = '<span style="color: red;">Error generating AI artwork. Please try again.</span>';
+      }
+      
+      // Re-enable button
+      generateBtn.disabled = false;
+      generateBtn.innerHTML = '🎨 Generate AI Artwork';
+    }
+
     window.onload = function() {
       addRow('cast');
       addRow('crew');
@@ -505,6 +581,9 @@
       document.getElementById('addCrewBtn').addEventListener('click', function() { addRow('crew'); });
       document.getElementById('addAdvertBtn').addEventListener('click', function() { addAdvert(); });
       document.getElementById('previewBtn').addEventListener('click', showPreview);
+      
+      // AI artwork prototype - Event listener for AI artwork generation
+      document.getElementById('generateAiArtworkBtn').addEventListener('click', generateAiArtwork);
       
       // Photo preview event listeners
       document.getElementById('photos').addEventListener('change', function() {
