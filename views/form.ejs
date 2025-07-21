@@ -65,6 +65,41 @@
         <div id="ai-artwork-status" style="margin: 5px 0; font-size: 0.9em; color: #666;"></div>
         <div id="cover-preview"></div>
 
+        <!-- Company logo overlay feature - Logo overlay on cover image -->
+        <div id="logo-overlay-section" style="margin-top: 20px; padding: 15px; border: 2px dashed #ddd; border-radius: 8px; background: #f9f9f9;">
+          <h4 style="margin: 0 0 10px 0; color: #333;">Company Logo Overlay on Cover Image</h4>
+          <label>
+            <input type="checkbox" id="enableLogoOverlay" name="enableLogoOverlay" value="true">
+            Enable logo overlay on cover image
+          </label><br>
+          
+          <div id="logo-overlay-controls" style="margin-top: 10px; display: none;">
+            <label for="overlayPosition">Logo Position on Cover:</label>
+            <select id="overlayPosition" name="overlayPosition">
+              <option value="top-left">Top Left</option>
+              <option value="top-center">Top Center</option>
+              <option value="top-right">Top Right</option>
+              <option value="bottom-left">Bottom Left</option>
+              <option value="bottom-right">Bottom Right</option>
+              <option value="center">Center</option>
+            </select><br>
+            
+            <label for="overlaySize">Logo Size:</label>
+            <select id="overlaySize" name="overlaySize">
+              <option value="small">Small (10%)</option>
+              <option value="medium" selected>Medium (15%)</option>
+              <option value="large">Large (20%)</option>
+            </select><br>
+            
+            <div id="overlay-preview" style="margin-top: 15px; border: 1px solid #ccc; border-radius: 4px; background: #fff; position: relative; display: none;">
+              <div style="text-align: center; padding: 10px; font-weight: bold; color: #666;">Cover Image + Logo Overlay Preview</div>
+              <div id="overlay-preview-container" style="position: relative; display: inline-block; margin: 10px;">
+                <!-- Preview will be inserted here by JavaScript -->
+              </div>
+            </div>
+          </div>
+        </div>
+
         <label>
           <input type="checkbox" id="overlayInfo" name="overlayInfo" value="true">
           Show overlay info on cover (uncheck if info is already in the image)
@@ -255,6 +290,83 @@
       const input = document.getElementById('directorPhoto');
       const preview = document.getElementById('director-photo-preview');
       previewSinglePhoto(input, preview);
+    }
+
+    // Company logo overlay feature - Logo overlay preview and positioning
+    function updateLogoOverlayPreview() {
+      const coverInput = document.getElementById('coverImage');
+      const logoInput = document.getElementById('logo');
+      const overlayEnabled = document.getElementById('enableLogoOverlay').checked;
+      const overlayPreview = document.getElementById('overlay-preview');
+      const overlayContainer = document.getElementById('overlay-preview-container');
+      
+      if (!overlayEnabled || !coverInput.files[0] || !logoInput.files[0]) {
+        overlayPreview.style.display = 'none';
+        return;
+      }
+      
+      overlayPreview.style.display = 'block';
+      
+      const coverFile = coverInput.files[0];
+      const logoFile = logoInput.files[0];
+      const position = document.getElementById('overlayPosition').value;
+      const size = document.getElementById('overlaySize').value;
+      
+      // Create cover image preview
+      const coverReader = new FileReader();
+      coverReader.onload = function(e) {
+        // Create logo preview
+        const logoReader = new FileReader();
+        logoReader.onload = function(logoE) {
+          // Calculate logo size based on selection
+          const sizeMap = { small: '10%', medium: '15%', large: '20%' };
+          const logoSize = sizeMap[size];
+          
+          // Calculate position styles
+          let positionStyles = '';
+          switch(position) {
+            case 'top-left':
+              positionStyles = 'top: 10px; left: 10px;';
+              break;
+            case 'top-center':
+              positionStyles = 'top: 10px; left: 50%; transform: translateX(-50%);';
+              break;
+            case 'top-right':
+              positionStyles = 'top: 10px; right: 10px;';
+              break;
+            case 'bottom-left':
+              positionStyles = 'bottom: 10px; left: 10px;';
+              break;
+            case 'bottom-right':
+              positionStyles = 'bottom: 10px; right: 10px;';
+              break;
+            case 'center':
+              positionStyles = 'top: 50%; left: 50%; transform: translate(-50%, -50%);';
+              break;
+          }
+          
+          overlayContainer.innerHTML = `
+            <div style="position: relative; display: inline-block;">
+              <img src="${e.target.result}" style="max-width: 300px; max-height: 400px; display: block; border-radius: 4px;" alt="Cover preview">
+              <img src="${logoE.target.result}" style="position: absolute; ${positionStyles} max-width: ${logoSize}; max-height: ${logoSize}; z-index: 10; border-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);" alt="Logo overlay">
+            </div>
+          `;
+        };
+        logoReader.readAsDataURL(logoFile);
+      };
+      coverReader.readAsDataURL(coverFile);
+    }
+
+    function toggleLogoOverlayControls() {
+      const enabled = document.getElementById('enableLogoOverlay').checked;
+      const controls = document.getElementById('logo-overlay-controls');
+      controls.style.display = enabled ? 'block' : 'none';
+      
+      if (enabled) {
+        updateLogoOverlayPreview();
+      } else {
+        document.getElementById('overlay-preview').style.display = 'none';
+      }
     }
 
     function loadSample() {
@@ -621,16 +733,23 @@
       });
       document.getElementById('logo').addEventListener('change', function() {
         previewLogo();
+        updateLogoOverlayPreview(); // Company logo overlay feature
         showPreview();
       });
       document.getElementById('coverImage').addEventListener('change', function() {
         previewCover();
+        updateLogoOverlayPreview(); // Company logo overlay feature
         showPreview();
       });
       document.getElementById('directorPhoto').addEventListener('change', function() {
         previewDirectorPhoto();
         showPreview();
       });
+      
+      // Company logo overlay feature - Event listeners for logo overlay controls
+      document.getElementById('enableLogoOverlay').addEventListener('change', toggleLogoOverlayControls);
+      document.getElementById('overlayPosition').addEventListener('change', updateLogoOverlayPreview);
+      document.getElementById('overlaySize').addEventListener('change', updateLogoOverlayPreview);
       
       // Form input event listener for live preview
       document.getElementById('programmeForm').addEventListener('input', showPreview);
