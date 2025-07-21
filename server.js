@@ -3,6 +3,8 @@ const path = require('path');
 const multer = require('multer');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
+// AI artwork prototype - imports for API calls
+const https = require('https');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -84,6 +86,94 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // GET: Programme form
 app.get('/', (req, res) => {
   res.render('form');
+});
+
+// AI artwork prototype - Generate AI artwork route
+app.post('/generate-ai-artwork', express.json(), (req, res) => {
+  const { playName, synopsis, theme } = req.body;
+  
+  // Create a descriptive prompt based on the play information
+  let prompt = `A theatrical programme cover for "${playName || 'a play'}". `;
+  
+  if (synopsis) {
+    prompt += `The play is about: ${synopsis.substring(0, 200)}. `;
+  }
+  
+  // Add theme-specific styling
+  const themePrompts = {
+    classic: 'Classic and elegant theatrical design, vintage style, professional',
+    fairy: 'Magical fairy tale design, whimsical, enchanted forest, sparkles and magic',
+    forest: 'Natural forest setting, green and earthy tones, trees and nature',
+    arabian: 'Arabian nights theme, golden colors, middle eastern design, ornate patterns',
+    spy: 'Spy thriller design, dark and mysterious, noir style, dramatic shadows',
+    drama: 'Dramatic and intense design, deep red colors, emotional, powerful'
+  };
+  
+  prompt += themePrompts[theme] || themePrompts.classic;
+  prompt += '. Digital art, high quality, theatrical poster style.';
+  
+  // Call Hugging Face Inference API for Stable Diffusion
+  const data = JSON.stringify({
+    inputs: prompt,
+    parameters: {
+      guidance_scale: 7.5,
+      num_inference_steps: 20,
+      width: 512,
+      height: 768
+    }
+  });
+  
+  const options = {
+    hostname: 'api-inference.huggingface.co',
+    port: 443,
+    path: '/models/runwayml/stable-diffusion-v1-5',
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer hf_demo', // Using demo token for free tier
+      'Content-Type': 'application/json',
+      'Content-Length': data.length
+    }
+  };
+  
+  const apiReq = https.request(options, (apiRes) => {
+    if (apiRes.statusCode === 200) {
+      const chunks = [];
+      apiRes.on('data', (chunk) => chunks.push(chunk));
+      apiRes.on('end', () => {
+        const imageBuffer = Buffer.concat(chunks);
+        // Save the generated image temporarily
+        const filename = `ai-artwork-${Date.now()}.png`;
+        const filepath = path.join(__dirname, 'uploads', filename);
+        
+        fs.writeFileSync(filepath, imageBuffer);
+        
+        res.json({
+          success: true,
+          imageUrl: `/uploads/${filename}`,
+          prompt: prompt
+        });
+      });
+    } else {
+      // Fallback: return a placeholder response for demo purposes
+      res.json({
+        success: false,
+        error: 'AI service temporarily unavailable. This is a prototype feature.',
+        fallback: true
+      });
+    }
+  });
+  
+  apiReq.on('error', (error) => {
+    console.error('AI artwork generation error:', error);
+    res.json({
+      success: false,
+      error: 'AI service temporarily unavailable. This is a prototype feature.',
+      fallback: true
+    });
+  });
+  
+  apiReq.write(data);
+  apiReq.end();
 });
 
 // POST: Generate PDF
