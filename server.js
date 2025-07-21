@@ -30,49 +30,61 @@ const uploadFields = [
   { name: 'advertImage', maxCount: 10 }
 ];
 
-// Theme config
+// Theme config - Client feedback enhancement: Improved color contrast and accents
 const themes = {
   classic: {
-    color: '#333',
-    heading: '#222',
+    color: '#2c2c2c', // Darker for better contrast
+    heading: '#1a1a1a', // Even darker for headings
     font: 'Times-Roman',
     border: path.join(__dirname, 'public/theme-assets/classic-border.png'),
-    accent: '#007bff'
+    accent: '#0056b3', // Deeper blue for better contrast
+    background: '#ffffff',
+    lightAccent: '#e3f2fd'
   },
   fairy: {
-    color: '#e070e0',
-    heading: '#b050b0',
+    color: '#4a148c', // Much darker purple for better readability
+    heading: '#2e0854', // Very dark purple for headings
     font: 'Courier',
     border: path.join(__dirname, 'public/theme-assets/fairy-border.png'),
-    accent: '#f7cafc'
+    accent: '#8e24aa', // Medium purple accent
+    background: '#fce4ec',
+    lightAccent: '#f3e5f5'
   },
   forest: {
-    color: '#228B22',
-    heading: '#145914',
+    color: '#1b5e20', // Darker green for better contrast
+    heading: '#0d4014', // Very dark green for headings
     font: 'Times-Roman',
     border: path.join(__dirname, 'public/theme-assets/forest-border.png'),
-    accent: '#d4ecd1'
+    accent: '#388e3c', // Medium green accent
+    background: '#e8f5e8',
+    lightAccent: '#c8e6c9'
   },
   arabian: {
-    color: '#FFD700',
-    heading: '#CFA100',
+    color: '#e65100', // Orange-brown for better readability
+    heading: '#bf360c', // Dark orange for headings
     font: 'Helvetica-Bold',
     border: path.join(__dirname, 'public/theme-assets/arabian-border.png'),
-    accent: '#fffbe6'
+    accent: '#ff9800', // Orange accent
+    background: '#fff8e1',
+    lightAccent: '#ffe0b2'
   },
   spy: {
-    color: '#444',
-    heading: '#222',
+    color: '#212121', // Very dark gray for contrast
+    heading: '#000000', // Black for headings
     font: 'Helvetica',
     border: path.join(__dirname, 'public/theme-assets/spy-border.png'),
-    accent: '#e4e4e4'
+    accent: '#424242', // Medium gray accent
+    background: '#f5f5f5',
+    lightAccent: '#eeeeee'
   },
   drama: {
-    color: '#B22222',
-    heading: '#7A1818',
+    color: '#b71c1c', // Darker red for better contrast
+    heading: '#7f0000', // Very dark red for headings
     font: 'Times-Bold',
     border: path.join(__dirname, 'public/theme-assets/drama-border.png'),
-    accent: '#ffe5e5'
+    accent: '#d32f2f', // Medium red accent
+    background: '#ffebee',
+    lightAccent: '#ffcdd2'
   }
 };
 
@@ -188,7 +200,8 @@ app.post('/generate', upload.fields(uploadFields), (req, res) => {
     contactInfo,
     directorNote,
     sponsorInfo,
-    overlayInfo
+    overlayInfo,
+    logoPlacement = 'top-left' // Client feedback enhancement: Logo placement option
   } = req.body;
 
   // Parse cast/crew arrays
@@ -199,6 +212,9 @@ app.post('/generate', upload.fields(uploadFields), (req, res) => {
   
   // Parse advert arrays
   const advertTitles = req.body['advertTitle[]'] || req.body.advertTitle || [];
+  
+  // Client feedback enhancement: Parse photo captions
+  const photoCaptions = req.body['photoCaption[]'] || req.body.photoCaption || [];
 
   // Normalize arrays
   const cast = Array.isArray(castNames)
@@ -258,37 +274,84 @@ app.post('/generate', upload.fields(uploadFields), (req, res) => {
     }
   }
 
-  // Helper function to add section separator
+  // Client feedback enhancement: Enhanced section separator with color accents
   function addSeparator() {
     doc.moveTo(doc.page.margins.left, doc.y)
       .lineTo(doc.page.width - doc.page.margins.right, doc.y)
-      .strokeColor(t.accent).lineWidth(1.5).stroke();
+      .strokeColor(t.accent).lineWidth(2).stroke();
     doc.moveDown();
+  }
+
+  // Client feedback enhancement: Add colored background accent for sections
+  function addSectionBackground(startY, endY) {
+    doc.rect(doc.page.margins.left - 10, startY - 5, 
+             doc.page.width - doc.page.margins.left - doc.page.margins.right + 20, 
+             endY - startY + 10)
+       .fillColor(t.lightAccent || '#f9f9f9')
+       .fill();
   }
 
   // Page 1: Front Cover
   addThemedBorder();
 
-  // Logo (top-left corner if available)
+  // Client feedback enhancement: Configurable logo placement
   if (logoFile) {
+    // Calculate logo position based on placement option
+    let logoX, logoY;
+    const logoWidth = 80;
+    const logoHeight = 40;
+    const pageWidth = doc.page.width;
+    const pageHeight = doc.page.height;
+    const margin = doc.page.margins.left;
+    
+    switch (logoPlacement) {
+      case 'top-left':
+        logoX = margin;
+        logoY = doc.y;
+        break;
+      case 'top-center':
+        logoX = (pageWidth - logoWidth) / 2;
+        logoY = doc.y;
+        break;
+      case 'top-right':
+        logoX = pageWidth - margin - logoWidth;
+        logoY = doc.y;
+        break;
+      case 'middle-left':
+        logoX = margin;
+        logoY = (pageHeight - logoHeight) / 2;
+        break;
+      case 'middle-center':
+        logoX = (pageWidth - logoWidth) / 2;
+        logoY = (pageHeight - logoHeight) / 2;
+        break;
+      case 'middle-right':
+        logoX = pageWidth - margin - logoWidth;
+        logoY = (pageHeight - logoHeight) / 2;
+        break;
+      default:
+        logoX = margin;
+        logoY = doc.y;
+    }
+    
     if (fs.existsSync(logoFile.path)) {
       try {
-        doc.image(logoFile.path, doc.page.margins.left, doc.y, {
-          fit: [80, 40],
+        doc.image(logoFile.path, logoX, logoY, {
+          fit: [logoWidth, logoHeight],
           align: 'left'
         });
       } catch (err) {
         console.log('Error loading logo:', err);
         // Draw placeholder
-        doc.rect(doc.page.margins.left, doc.y, 80, 40).fillColor('#f0f0f0').fill();
+        doc.rect(logoX, logoY, logoWidth, logoHeight).fillColor('#f0f0f0').fill();
         doc.fontSize(8).fillColor('#666')
-          .text('Logo', doc.page.margins.left, doc.y + 15, { width: 80, align: 'center' });
+          .text('Logo', logoX, logoY + 15, { width: logoWidth, align: 'center' });
       }
     } else {
       // Draw placeholder for missing logo
-      doc.rect(doc.page.margins.left, doc.y, 80, 40).fillColor('#f0f0f0').fill();
+      doc.rect(logoX, logoY, logoWidth, logoHeight).fillColor('#f0f0f0').fill();
       doc.fontSize(8).fillColor('#666')
-        .text('Logo', doc.page.margins.left, doc.y + 15, { width: 80, align: 'center' });
+        .text('Logo', logoX, logoY + 15, { width: logoWidth, align: 'center' });
     }
   }
 
@@ -374,8 +437,8 @@ app.post('/generate', upload.fields(uploadFields), (req, res) => {
   doc.moveDown();
   addSeparator();
 
-  // Cast section
-  doc.fontSize(15).fillColor(t.heading).text('Cast:', { underline: true });
+  // Cast section - Client feedback enhancement: Center the Cast title
+  doc.fontSize(15).fillColor(t.heading).text('Cast:', { underline: true, align: 'center' });
   doc.moveDown(0.3);
   
   // Always use list layout for cast (centered)
@@ -512,12 +575,18 @@ app.post('/generate', upload.fields(uploadFields), (req, res) => {
     }
   }
 
-  // Additional Photos (each on own page, with themed frames)
+  // Client feedback enhancement: Additional Photos with custom captions
   if (additionalPhotos && additionalPhotos.length) {
     additionalPhotos.forEach((file, idx) => {
       doc.addPage({ size: 'A5', margin: 40 });
       addThemedBorder();
-      doc.fontSize(15).fillColor(t.heading).text(`Photo ${idx + 1}`, { align: 'center' });
+      
+      // Use custom caption if provided, otherwise default to Photo X
+      const caption = Array.isArray(photoCaptions) && photoCaptions[idx] && photoCaptions[idx].trim() 
+        ? photoCaptions[idx].trim() 
+        : `Photo ${idx + 1}`;
+      
+      doc.fontSize(15).fillColor(t.heading).text(caption, { align: 'center' });
       doc.moveDown(0.5);
       try {
         doc.image(file.path, {

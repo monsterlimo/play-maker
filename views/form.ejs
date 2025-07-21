@@ -46,6 +46,17 @@
         <label for="logo">Logo Upload:</label>
         <input type="file" id="logo" name="logo" accept="image/*"><br>
         <div id="logo-preview"></div>
+        
+        <!-- Client feedback enhancement: Logo placement options -->
+        <label for="logoPlacement">Logo Placement:</label>
+        <select id="logoPlacement" name="logoPlacement">
+          <option value="top-left">Top Left</option>
+          <option value="top-center">Top Center</option>
+          <option value="top-right">Top Right</option>
+          <option value="middle-left">Middle Left</option>
+          <option value="middle-center">Middle Center</option>
+          <option value="middle-right">Middle Right</option>
+        </select><br>
 
         <label for="coverImage">Cover Image:</label>
         <input type="file" id="coverImage" name="coverImage" accept="image/*"><br>
@@ -108,6 +119,12 @@
         <label for="photos">Additional Photos (up to 4):</label>
         <input type="file" id="photos" name="photos" accept="image/*" multiple><br>
         <div id="photo-preview"></div>
+        
+        <!-- Client feedback enhancement: Photo captions -->
+        <div id="photo-captions-container" style="margin-top: 15px;">
+          <label>Photo Captions (optional):</label>
+          <div id="photo-captions"></div>
+        </div>
         <br>
       </fieldset>
 
@@ -196,8 +213,11 @@
     function previewPhotos() {
       const input = document.getElementById('photos');
       const preview = document.getElementById('photo-preview');
+      const captionsContainer = document.getElementById('photo-captions');
       preview.innerHTML = '';
-      Array.from(input.files).forEach(file => {
+      captionsContainer.innerHTML = ''; // Client feedback enhancement: Clear captions
+      
+      Array.from(input.files).forEach((file, index) => {
         const reader = new FileReader();
         reader.onload = function(e) {
           const img = document.createElement('img');
@@ -207,6 +227,15 @@
           preview.appendChild(img);
         };
         reader.readAsDataURL(file);
+        
+        // Client feedback enhancement: Add caption input for each photo
+        const captionDiv = document.createElement('div');
+        captionDiv.style.marginBottom = '8px';
+        captionDiv.innerHTML = `
+          <label for="photoCaption${index}" style="font-size: 0.9em;">Photo ${index + 1} Caption:</label>
+          <input type="text" id="photoCaption${index}" name="photoCaption[]" placeholder="Optional caption for photo ${index + 1}" style="width: 100%; margin-top: 4px;">
+        `;
+        captionsContainer.appendChild(captionDiv);
       });
     }
 
@@ -396,14 +425,14 @@
         directorPhotoHtml = `<img src="${url}" style="max-width:120px; height:auto; margin:8px; border-radius:7px;">`;
       }
 
-      // Theme colors
+      // Client feedback enhancement: Updated theme colors for better contrast
       const themeStyles = {
-        classic: { bg: '#fff', heading: '#222', accent: '#007bff' },
-        fairy:   { bg: '#f7cafc', heading: '#b050b0', accent: '#e070e0' },
-        forest:  { bg: '#d4ecd1', heading: '#145914', accent: '#228B22' },
-        arabian: { bg: '#fffbe6', heading: '#CFA100', accent: '#FFD700' },
-        spy:     { bg: '#e4e4e4', heading: '#222', accent: '#444' },
-        drama:   { bg: '#ffe5e5', heading: '#7A1818', accent: '#B22222' }
+        classic: { bg: '#ffffff', heading: '#1a1a1a', accent: '#0056b3', color: '#2c2c2c' },
+        fairy:   { bg: '#fce4ec', heading: '#2e0854', accent: '#8e24aa', color: '#4a148c' },
+        forest:  { bg: '#e8f5e8', heading: '#0d4014', accent: '#388e3c', color: '#1b5e20' },
+        arabian: { bg: '#fff8e1', heading: '#bf360c', accent: '#ff9800', color: '#e65100' },
+        spy:     { bg: '#f5f5f5', heading: '#000000', accent: '#424242', color: '#212121' },
+        drama:   { bg: '#ffebee', heading: '#7f0000', accent: '#d32f2f', color: '#b71c1c' }
       };
       const t = themeStyles[theme] || themeStyles.classic;
 
@@ -440,7 +469,7 @@
           <!-- Synopsis Section -->
           <div style="margin-bottom:30px;">
             <h3 style="color:${t.heading};">Synopsis</h3>
-            <p>${synopsis}</p>
+            <p style="color:${t.color};">${synopsis}</p>
           </div>
           
           <!-- Credits Section -->
