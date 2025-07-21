@@ -5,6 +5,8 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 // AI artwork prototype - imports for API calls
 const https = require('https');
+// Company logo overlay feature - Image composition library
+const sharp = require('sharp');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -188,8 +190,81 @@ app.post('/generate-ai-artwork', express.json(), (req, res) => {
   apiReq.end();
 });
 
+// Company logo overlay feature - Function to create composite cover image with logo overlay
+async function createCompositeImage(coverImagePath, logoPath, position, size) {
+  try {
+    // Read the cover image
+    const coverBuffer = await sharp(coverImagePath).toBuffer();
+    const coverMeta = await sharp(coverImagePath).metadata();
+    
+    // Read and resize the logo based on the size parameter
+    const sizeMap = { small: 0.1, medium: 0.15, large: 0.2 };
+    const sizeRatio = sizeMap[size] || 0.15;
+    const logoSize = Math.min(coverMeta.width * sizeRatio, coverMeta.height * sizeRatio);
+    
+    const logoBuffer = await sharp(logoPath)
+      .resize(Math.round(logoSize), Math.round(logoSize), { 
+        fit: 'inside',
+        withoutEnlargement: true 
+      })
+      .toBuffer();
+    
+    const logoMeta = await sharp(logoBuffer).metadata();
+    
+    // Calculate position based on placement option
+    let left, top;
+    const margin = 20; // 20px margin from edges
+    
+    switch(position) {
+      case 'top-left':
+        left = margin;
+        top = margin;
+        break;
+      case 'top-center':
+        left = Math.round((coverMeta.width - logoMeta.width) / 2);
+        top = margin;
+        break;
+      case 'top-right':
+        left = coverMeta.width - logoMeta.width - margin;
+        top = margin;
+        break;
+      case 'bottom-left':
+        left = margin;
+        top = coverMeta.height - logoMeta.height - margin;
+        break;
+      case 'bottom-right':
+        left = coverMeta.width - logoMeta.width - margin;
+        top = coverMeta.height - logoMeta.height - margin;
+        break;
+      case 'center':
+      default:
+        left = Math.round((coverMeta.width - logoMeta.width) / 2);
+        top = Math.round((coverMeta.height - logoMeta.height) / 2);
+        break;
+    }
+    
+    // Create composite image
+    const compositeBuffer = await sharp(coverBuffer)
+      .composite([{
+        input: logoBuffer,
+        left: Math.max(0, left),
+        top: Math.max(0, top)
+      }])
+      .toBuffer();
+    
+    // Save composite image
+    const outputPath = coverImagePath.replace(/\.(jpg|jpeg|png)$/i, '_with_logo.$1');
+    await sharp(compositeBuffer).toFile(outputPath);
+    
+    return outputPath;
+  } catch (error) {
+    console.error('Error creating composite image:', error);
+    return coverImagePath; // Return original if composite creation fails
+  }
+}
+
 // POST: Generate PDF
-app.post('/generate', upload.fields(uploadFields), (req, res) => {
+app.post('/generate', upload.fields(uploadFields), async (req, res) => {
   const {
     theme = 'classic',
     playName,
@@ -201,7 +276,11 @@ app.post('/generate', upload.fields(uploadFields), (req, res) => {
     directorNote,
     sponsorInfo,
     overlayInfo,
-    logoPlacement = 'top-left' // Client feedback enhancement: Logo placement option
+    logoPlacement = 'top-left', // Client feedback enhancement: Logo placement option
+    // Company logo overlay feature - New parameters for logo overlay on cover image
+    enableLogoOverlay,
+    overlayPosition = 'top-left',
+    overlaySize = 'medium'
   } = req.body;
 
   // Parse cast/crew arrays
@@ -248,6 +327,23 @@ app.post('/generate', upload.fields(uploadFields), (req, res) => {
   const coverFile = req.files && req.files.coverImage ? req.files.coverImage[0] : null;
   const directorPhotoFile = req.files && req.files.directorPhoto ? req.files.directorPhoto[0] : null;
   const additionalPhotos = req.files && req.files.photos ? req.files.photos : [];
+
+  // Company logo overlay feature - Create composite cover image if overlay is enabled
+  let finalCoverImagePath = coverFile ? coverFile.path : null;
+  if (enableLogoOverlay && coverFile && logoFile && fs.existsSync(coverFile.path) && fs.existsSync(logoFile.path)) {
+    try {
+      finalCoverImagePath = await createCompositeImage(
+        coverFile.path, 
+        logoFile.path, 
+        overlayPosition, 
+        overlaySize
+      );
+      console.log('Created composite cover image with logo overlay:', finalCoverImagePath);
+    } catch (error) {
+      console.error('Failed to create composite image, using original cover:', error);
+      finalCoverImagePath = coverFile.path;
+    }
+  }
 
   // Theme config
   const t = themes[theme] || themes.classic;
@@ -356,11 +452,11 @@ app.post('/generate', upload.fields(uploadFields), (req, res) => {
   }
 
   // Cover image (if available and large)
-  if (coverFile) {
-    if (fs.existsSync(coverFile.path)) {
+  if (finalCoverImagePath) {
+    if (fs.existsSync(finalCoverImagePath)) {
       try {
         doc.addPage({ size: 'A5', margin: 0 }); // No margin for full bleed
-        doc.image(coverFile.path, 0, 0, {
+        doc.image(finalCoverImagePath, 0, 0, {
           width: doc.page.width,
           height: doc.page.height
         });
@@ -399,8 +495,8 @@ app.post('/generate', upload.fields(uploadFields), (req, res) => {
   }
 
   // Title page (if no cover image or overlay info is disabled)
-  if (!coverFile || !overlayInfo) {
-    if (coverFile) {
+  if (!finalCoverImagePath || !overlayInfo) {
+    if (finalCoverImagePath) {
       doc.addPage({ size: 'A5', margin: 40 });
       addThemedBorder();
     }
