@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>A5 Programme Generator</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    /* Programme builder enhancement - Start page styling */
+    .start-container {
+      text-align: center;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 40px;
+    }
+    .option-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin: 50px 0;
+    }
+    .option-card {
+      background: white;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 30px;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .option-card:hover {
+      border-color: #007bff;
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    .option-card h3 {
+      color: #007bff;
+      margin-bottom: 15px;
+      font-size: 1.4em;
+    }
+    .option-card p {
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .option-card .features {
+      text-align: left;
+      margin: 20px 0;
+    }
+    .option-card .features li {
+      margin-bottom: 8px;
+      color: #555;
+    }
+    .new-badge {
+      background: #28a745;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8em;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    @media (max-width: 768px) {
+      .option-cards {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="start-container">
+      <h1>A5 Programme Generator</h1>
+      <p style="font-size: 1.2em; color: #666; margin-bottom: 30px;">
+        Choose how you'd like to create your theatre programme
+      </p>
+      
+      <div class="option-cards">
+        <!-- Current/Classic Version -->
+        <a href="/classic" class="option-card">
+          <h3>Classic Builder</h3>
+          <p>Quick and simple programme creation using the original single-form approach.</p>
+          <ul class="features">
+            <li>✓ Fill out one comprehensive form</li>
+            <li>✓ All standard programme sections</li>
+            <li>✓ Proven and reliable</li>
+            <li>✓ Fast for simple programmes</li>
+            <li>✓ Live HTML preview</li>
+            <li>✓ Multiple themes available</li>
+          </ul>
+          <p><strong>Best for:</strong> Traditional programmes with standard layouts</p>
+        </a>
+        
+        <!-- New Builder -->
+        <a href="/builder" class="option-card">
+          <h3>Flexible Builder <span class="new-badge">NEW</span></h3>
+          <p>Create custom programmes with flexible page layouts and advanced features.</p>
+          <ul class="features">
+            <li>✓ Add unlimited custom pages</li>
+            <li>✓ Multiple page templates</li>
+            <li>✓ Drag-and-drop page reordering</li>
+            <li>✓ Live preview of each page</li>
+            <li>✓ Image galleries and layouts</li>
+            <li>✓ Reviews and testimonials</li>
+            <li>✓ Coming soon/attractions</li>
+          </ul>
+          <p><strong>Best for:</strong> Complex programmes requiring custom layouts</p>
+        </a>
+      </div>
+      
+      <div style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+        <h4 style="margin-top: 0;">Not sure which to choose?</h4>
+        <p style="margin-bottom: 0;">
+          Try the <strong>Classic Builder</strong> for your first programme to get familiar with the basics, 
+          then explore the <strong>Flexible Builder</strong> when you need more customization options.
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

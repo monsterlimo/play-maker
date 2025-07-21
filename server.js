@@ -97,9 +97,185 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// GET: Programme form
+// Programme builder enhancement - Start page route
 app.get('/', (req, res) => {
-  res.render('form');
+  res.render('start');
+});
+
+// Programme builder enhancement - Classic builder route (original form)
+app.get('/classic', (req, res) => {
+  res.render('form-classic');
+});
+
+// Programme builder enhancement - New flexible builder route
+app.get('/builder', (req, res) => {
+  res.render('builder/index');
+});
+
+// Programme builder enhancement - Generate PDF from builder data
+app.post('/builder/generate', express.json(), (req, res) => {
+  const { theme = 'classic', pages = [] } = req.body;
+  
+  if (pages.length === 0) {
+    return res.status(400).json({ error: 'No pages provided' });
+  }
+  
+  // Theme config
+  const t = themes[theme] || themes.classic;
+  
+  // Start PDF
+  const doc = new PDFDocument({ size: 'A5', margin: 40 });
+  const chunks = [];
+  doc.on('data', chunk => chunks.push(chunk));
+  doc.on('end', () => {
+    const result = Buffer.concat(chunks);
+    res.setHeader('Content-disposition', `attachment; filename=programme-${Date.now()}.pdf`);
+    res.setHeader('Content-type', 'application/pdf');
+    res.send(result);
+  });
+  
+  // Helper function to add themed border to page
+  function addThemedBorder() {
+    if (t.border && fs.existsSync(t.border)) {
+      doc.image(t.border, doc.page.margins.left, doc.page.margins.top - 20, {
+        width: doc.page.width - doc.page.margins.left - doc.page.margins.right,
+        height: 24
+      });
+      doc.moveDown(1.2);
+    }
+  }
+  
+  // Enhanced section separator with color accents
+  function addSeparator() {
+    doc.moveTo(doc.page.margins.left, doc.y)
+      .lineTo(doc.page.width - doc.page.margins.right, doc.y)
+      .strokeColor(t.accent).lineWidth(2).stroke();
+    doc.moveDown();
+  }
+  
+  // Sort pages by order
+  const sortedPages = [...pages].sort((a, b) => a.order - b.order);
+  
+  // Generate each page
+  sortedPages.forEach((page, index) => {
+    if (index > 0) {
+      doc.addPage({ size: 'A5', margin: 40 });
+    }
+    
+    addThemedBorder();
+    
+    switch (page.template) {
+      case 'cover':
+        generateCoverPage(doc, page.data, t);
+        break;
+      case 'paragraph':
+        generateParagraphPage(doc, page.data, t);
+        break;
+      case 'credits':
+        generateCreditsPage(doc, page.data, t);
+        break;
+      case 'image-gallery':
+        generateGalleryPage(doc, page.data, t);
+        break;
+      case 'blank-image':
+        generateBlankImagePage(doc, page.data, t);
+        break;
+      case 'reviews':
+        generateReviewsPage(doc, page.data, t);
+        break;
+      case 'coming-soon':
+        generateComingSoonPage(doc, page.data, t);
+        break;
+    }
+  });
+  
+  doc.end();
+  
+  // Page generation functions
+  function generateCoverPage(doc, data, theme) {
+    doc.fontSize(24).fillColor(theme.heading).font(theme.font).text(data.coverPlayName || 'Play Name', { align: 'center' });
+    doc.moveDown(0.5);
+    doc.fontSize(14).fillColor(theme.color).text(data.coverDate || '', { align: 'center' });
+    doc.text(data.coverVenue || '', { align: 'center' });
+    doc.text(`Director: ${data.coverDirector || ''}`, { align: 'center' });
+    doc.moveDown();
+    
+    if (data.coverSynopsis) {
+      addSeparator();
+      doc.fontSize(12).fillColor(theme.color).text(data.coverSynopsis, { align: 'justify' });
+      doc.moveDown();
+    }
+    
+    if (data.coverContact) {
+      addSeparator();
+      doc.fontSize(12).fillColor(theme.heading).text('Contact Information:', { align: 'center' });
+      doc.fontSize(10).fillColor(theme.color).text(data.coverContact, { align: 'center' });
+    }
+  }
+  
+  function generateParagraphPage(doc, data, theme) {
+    doc.fontSize(18).fillColor(theme.heading).text(data.paragraphTitle || 'Page Title', { align: 'center' });
+    doc.moveDown();
+    addSeparator();
+    doc.fontSize(12).fillColor(theme.color).text(data.paragraphContent || '', { align: 'justify' });
+  }
+  
+  function generateCreditsPage(doc, data, theme) {
+    doc.fontSize(18).fillColor(theme.heading).text(data.creditsTitle || 'Credits', { align: 'center' });
+    doc.moveDown();
+    addSeparator();
+    
+    const entries = data.entries || [];
+    doc.fontSize(11).fillColor(theme.color);
+    entries.forEach(entry => {
+      if (data.creditsType === 'simple') {
+        if (entry.text) {
+          doc.text(entry.text, { align: 'center' });
+        }
+      } else {
+        if (entry.name && entry.role) {
+          doc.text(`${entry.name} ....... ${entry.role}`, { align: 'center' });
+        } else if (entry.name) {
+          doc.text(entry.name, { align: 'center' });
+        }
+      }
+    });
+  }
+  
+  function generateGalleryPage(doc, data, theme) {
+    doc.fontSize(18).fillColor(theme.heading).text(data.galleryTitle || 'Image Gallery', { align: 'center' });
+    doc.moveDown();
+    addSeparator();
+    doc.fontSize(12).fillColor(theme.color).text('Image gallery layout (images would be displayed here)', { align: 'center' });
+  }
+  
+  function generateBlankImagePage(doc, data, theme) {
+    doc.fontSize(12).fillColor(theme.color).text('Full-page image would be displayed here', { align: 'center' });
+  }
+  
+  function generateReviewsPage(doc, data, theme) {
+    doc.fontSize(18).fillColor(theme.heading).text(data.reviewsTitle || 'Reviews', { align: 'center' });
+    doc.moveDown();
+    addSeparator();
+    
+    const reviews = data.reviews || [];
+    reviews.forEach(review => {
+      if (review.quote) {
+        doc.fontSize(12).fillColor(theme.color).text(`"${review.quote}"`, { align: 'justify', style: 'italic' });
+        if (review.attribution) {
+          doc.fontSize(10).fillColor(theme.accent).text(`— ${review.attribution}`, { align: 'right' });
+        }
+        doc.moveDown();
+      }
+    });
+  }
+  
+  function generateComingSoonPage(doc, data, theme) {
+    doc.fontSize(18).fillColor(theme.heading).text(data.comingSoonTitle || 'Coming Soon', { align: 'center' });
+    doc.moveDown();
+    addSeparator();
+    doc.fontSize(12).fillColor(theme.color).text(data.comingSoonContent || '', { align: 'justify' });
+  }
 });
 
 // AI artwork prototype - Generate AI artwork route
