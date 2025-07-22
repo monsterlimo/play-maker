@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Programme Builder - A5 Programme Generator</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    /* Programme builder enhancement - Builder interface styling */
+    .builder-container {
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+    
+    .builder-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+    
+    .builder-nav {
+      display: flex;
+      gap: 15px;
+    }
+    
+    .nav-button {
+      padding: 10px 20px;
+      background: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      text-decoration: none;
+      color: #333;
+      transition: all 0.2s;
+    }
+    
+    .nav-button:hover, .nav-button.active {
+      background: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+    
+    .builder-main {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 30px;
+    }
+    
+    .sidebar {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      height: fit-content;
+      position: sticky;
+      top: 20px;
+    }
+    
+    .page-templates {
+      margin-bottom: 30px;
+    }
+    
+    .template-button {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      margin-bottom: 10px;
+      background: white;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .template-button:hover {
+      border-color: #007bff;
+      background: #f8f9ff;
+    }
+    
+    .template-title {
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    
+    .template-description {
+      font-size: 0.9em;
+      color: #666;
+      margin: 0;
+    }
+    
+    .pages-list {
+      border-top: 1px solid #eee;
+      padding-top: 20px;
+    }
+    
+    .page-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: #f8f9fa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      cursor: move;
+    }
+    
+    .page-item.dragging {
+      opacity: 0.5;
+    }
+    
+    .page-info {
+      flex: 1;
+    }
+    
+    .page-title {
+      font-weight: bold;
+      margin-bottom: 2px;
+    }
+    
+    .page-type {
+      font-size: 0.8em;
+      color: #666;
+    }
+    
+    .page-actions {
+      display: flex;
+      gap: 5px;
+    }
+    
+    .page-action {
+      padding: 4px 8px;
+      font-size: 0.8em;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .edit-btn {
+      background: #28a745;
+      color: white;
+    }
+    
+    .preview-btn {
+      background: #17a2b8;
+      color: white;
+    }
+    
+    .delete-btn {
+      background: #dc3545;
+      color: white;
+    }
+    
+    .content-area {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 30px;
+      min-height: 600px;
+    }
+    
+    .empty-state {
+      text-align: center;
+      color: #666;
+      padding: 60px 20px;
+    }
+    
+    .empty-state h3 {
+      color: #999;
+      margin-bottom: 15px;
+    }
+    
+    .page-editor {
+      display: none;
+    }
+    
+    .page-editor.active {
+      display: block;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    
+    .image-upload {
+      border: 2px dashed #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      background: #fafafa;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .image-upload:hover {
+      border-color: #007bff;
+      background: #f8f9ff;
+    }
+    
+    .image-upload.has-image {
+      border-style: solid;
+      border-color: #28a745;
+    }
+    
+    .image-preview {
+      max-width: 200px;
+      max-height: 200px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    
+    .editor-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+    
+    .btn-primary {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    .btn-success {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    
+    .live-preview {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+      background: #fafafa;
+      min-height: 200px;
+    }
+    
+    .theme-selector {
+      margin-bottom: 20px;
+    }
+    
+    @media (max-width: 1024px) {
+      .builder-main {
+        grid-template-columns: 1fr;
+      }
+      
+      .sidebar {
+        position: static;
+        order: 2;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="builder-container">
+    <!-- Header -->
+    <div class="builder-header">
+      <div>
+        <h1>Programme Builder</h1>
+        <p style="margin: 0; color: #666;">Create custom programmes with flexible page layouts</p>
+      </div>
+      <div class="builder-nav">
+        <a href="/" class="nav-button">← Back to Start</a>
+        <button id="previewProgrammeBtn" class="nav-button">Preview Programme</button>
+        <button id="exportProgrammeBtn" class="btn-success">Export PDF</button>
+      </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="builder-main">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <!-- Theme Selector -->
+        <div class="theme-selector">
+          <h4>Programme Theme</h4>
+          <select id="programmeTheme">
+            <option value="classic">Classic</option>
+            <option value="fairy">Fairy</option>
+            <option value="forest">Forest</option>
+            <option value="arabian">Arabian</option>
+            <option value="spy">Spy</option>
+            <option value="drama">Drama</option>
+          </select>
+        </div>
+        
+        <!-- Page Templates -->
+        <div class="page-templates">
+          <h4>Add New Page</h4>
+          <button class="template-button" data-template="cover">
+            <div class="template-title">📄 Cover Page</div>
+            <div class="template-description">Main info and cover image</div>
+          </button>
+          
+          <button class="template-button" data-template="paragraph">
+            <div class="template-title">📝 Paragraph + Image</div>
+            <div class="template-description">Text content with optional image</div>
+          </button>
+          
+          <button class="template-button" data-template="credits">
+            <div class="template-title">👥 Credits/List</div>
+            <div class="template-description">Cast, crew, or other lists</div>
+          </button>
+          
+          <button class="template-button" data-template="image-gallery">
+            <div class="template-title">🖼️ Image Gallery</div>
+            <div class="template-description">1-4 images in grid layout</div>
+          </button>
+          
+          <button class="template-button" data-template="blank-image">
+            <div class="template-title">🎨 Blank Image Page</div>
+            <div class="template-description">Single full-page image</div>
+          </button>
+          
+          <button class="template-button" data-template="reviews">
+            <div class="template-title">⭐ Reviews/Testimonials</div>
+            <div class="template-description">Quotes and feedback</div>
+          </button>
+          
+          <button class="template-button" data-template="coming-soon">
+            <div class="template-title">🎭 Coming Soon</div>
+            <div class="template-description">Future events and attractions</div>
+          </button>
+        </div>
+        
+        <!-- Pages List -->
+        <div class="pages-list">
+          <h4>Programme Pages (<span id="pageCount">0</span>)</h4>
+          <div id="pagesList">
+            <!-- Pages will be added here dynamically -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- Content Area -->
+      <div class="content-area">
+        <div id="emptyState" class="empty-state">
+          <h3>📚 Start Building Your Programme</h3>
+          <p>Select a page template from the sidebar to begin creating your programme.</p>
+          <p>You can add multiple pages, reorder them, and preview each page as you build.</p>
+        </div>
+        
+        <!-- Page Editors (hidden by default) -->
+        <div id="coverEditor" class="page-editor">
+          <h3>📄 Cover Page</h3>
+          <div class="form-group">
+            <label>Play Name</label>
+            <input type="text" id="coverPlayName" placeholder="Enter play name">
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="text" id="coverDate" placeholder="e.g. 25 October 2025">
+          </div>
+          <div class="form-group">
+            <label>Venue</label>
+            <input type="text" id="coverVenue" placeholder="e.g. Globe Theatre">
+          </div>
+          <div class="form-group">
+            <label>Director</label>
+            <input type="text" id="coverDirector" placeholder="Director name">
+          </div>
+          <div class="form-group">
+            <label>Synopsis</label>
+            <textarea id="coverSynopsis" placeholder="Brief description of the play"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Cover Image</label>
+            <div class="image-upload" onclick="document.getElementById('coverImageFile').click()">
+              <div id="coverImagePreview">Click to upload cover image</div>
+              <input type="file" id="coverImageFile" accept="image/*" style="display: none;">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Contact Information</label>
+            <textarea id="coverContact" placeholder="Box office, phone, website, etc."></textarea>
+          </div>
+          <div class="live-preview" id="coverPreview">
+            <!-- Live preview will appear here -->
+          </div>
+          <div class="editor-actions">
+            <button class="btn-primary" onclick="savePage('cover')">Save Page</button>
+            <button class="btn-secondary" onclick="cancelEdit()">Cancel</button>
+          </div>
+        </div>
+        
+        <div id="paragraphEditor" class="page-editor">
+          <h3>📝 Paragraph + Image</h3>
+          <div class="form-group">
+            <label>Page Title</label>
+            <input type="text" id="paragraphTitle" placeholder="Enter page title">
+          </div>
+          <div class="form-group">
+            <label>Content</label>
+            <textarea id="paragraphContent" rows="8" placeholder="Enter your text content here..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Image (Optional)</label>
+            <div class="image-upload" onclick="document.getElementById('paragraphImageFile').click()">
+              <div id="paragraphImagePreview">Click to upload image</div>
+              <input type="file" id="paragraphImageFile" accept="image/*" style="display: none;">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Image Position</label>
+            <select id="paragraphImagePos">
+              <option value="below">Below text</option>
+              <option value="above">Above text</option>
+              <option value="right">Right side</option>
+              <option value="left">Left side</option>
+            </select>
+          </div>
+          <div class="live-preview" id="paragraphPreview">
+            <!-- Live preview will appear here -->
+          </div>
+          <div class="editor-actions">
+            <button class="btn-primary" onclick="savePage('paragraph')">Save Page</button>
+            <button class="btn-secondary" onclick="cancelEdit()">Cancel</button>
+          </div>
+        </div>
+        
+        <div id="creditsEditor" class="page-editor">
+          <h3>👥 Credits/List</h3>
+          <div class="form-group">
+            <label>Page Title</label>
+            <input type="text" id="creditsTitle" placeholder="e.g. Cast & Crew, Acknowledgments">
+          </div>
+          <div class="form-group">
+            <label>List Type</label>
+            <select id="creditsType">
+              <option value="cast">Cast (Name - Role)</option>
+              <option value="crew">Crew (Name - Role)</option>
+              <option value="simple">Simple List</option>
+              <option value="sponsors">Sponsors/Thanks</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Entries</label>
+            <div id="creditsEntries">
+              <!-- Dynamic entries will be added here -->
+            </div>
+            <button type="button" class="btn-secondary" onclick="addCreditsEntry()">Add Entry</button>
+          </div>
+          <div class="live-preview" id="creditsPreview">
+            <!-- Live preview will appear here -->
+          </div>
+          <div class="editor-actions">
+            <button class="btn-primary" onclick="savePage('credits')">Save Page</button>
+            <button class="btn-secondary" onclick="cancelEdit()">Cancel</button>
+          </div>
+        </div>
+        
+        <div id="imageGalleryEditor" class="page-editor">
+          <h3>🖼️ Image Gallery</h3>
+          <div class="form-group">
+            <label>Page Title</label>
+            <input type="text" id="galleryTitle" placeholder="Enter gallery title">
+          </div>
+          <div class="form-group">
+            <label>Gallery Layout</label>
+            <select id="galleryLayout">
+              <option value="1">Single Image</option>
+              <option value="2">Two Images</option>
+              <option value="3">Three Images</option>
+              <option value="4">Four Images</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Images</label>
+            <div id="galleryImages">
+              <!-- Dynamic image uploads will be added here -->
+            </div>
+          </div>
+          <div class="live-preview" id="galleryPreview">
+            <!-- Live preview will appear here -->
+          </div>
+          <div class="editor-actions">
+            <button class="btn-primary" onclick="savePage('image-gallery')">Save Page</button>
+            <button class="btn-secondary" onclick="cancelEdit()">Cancel</button>
+          </div>
+        </div>
+        
+        <div id="blankImageEditor" class="page-editor">
+          <h3>🎨 Blank Image Page</h3>
+          <div class="form-group">
+            <label>Full Page Image</label>
+            <div class="image-upload" onclick="document.getElementById('blankImageFile').click()">
+              <div id="blankImagePreview">Click to upload full-page image</div>
+              <input type="file" id="blankImageFile" accept="image/*" style="display: none;">
+            </div>
+          </div>
+          <div class="live-preview" id="blankImageLivePreview">
+            <!-- Live preview will appear here -->
+          </div>
+          <div class="editor-actions">
+            <button class="btn-primary" onclick="savePage('blank-image')">Save Page</button>
+            <button class="btn-secondary" onclick="cancelEdit()">Cancel</button>
+          </div>
+        </div>
+        
+        <div id="reviewsEditor" class="page-editor">
+          <h3>⭐ Reviews/Testimonials</h3>
+          <div class="form-group">
+            <label>Page Title</label>
+            <input type="text" id="reviewsTitle" placeholder="e.g. What People Are Saying, Reviews">
+          </div>
+          <div class="form-group">
+            <label>Reviews</label>
+            <div id="reviewsEntries">
+              <!-- Dynamic review entries will be added here -->
+            </div>
+            <button type="button" class="btn-secondary" onclick="addReviewEntry()">Add Review</button>
+          </div>
+          <div class="live-preview" id="reviewsPreview">
+            <!-- Live preview will appear here -->
+          </div>
+          <div class="editor-actions">
+            <button class="btn-primary" onclick="savePage('reviews')">Save Page</button>
+            <button class="btn-secondary" onclick="cancelEdit()">Cancel</button>
+          </div>
+        </div>
+        
+        <div id="comingSoonEditor" class="page-editor">
+          <h3>🎭 Coming Soon</h3>
+          <div class="form-group">
+            <label>Page Title</label>
+            <input type="text" id="comingSoonTitle" placeholder="e.g. Coming Soon, Future Attractions">
+          </div>
+          <div class="form-group">
+            <label>Main Content</label>
+            <textarea id="comingSoonContent" rows="6" placeholder="Describe upcoming events, future shows, etc."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Featured Image (Optional)</label>
+            <div class="image-upload" onclick="document.getElementById('comingSoonImageFile').click()">
+              <div id="comingSoonImagePreview">Click to upload featured image</div>
+              <input type="file" id="comingSoonImageFile" accept="image/*" style="display: none;">
+            </div>
+          </div>
+          <div class="live-preview" id="comingSoonLivePreview">
+            <!-- Live preview will appear here -->
+          </div>
+          <div class="editor-actions">
+            <button class="btn-primary" onclick="savePage('coming-soon')">Save Page</button>
+            <button class="btn-secondary" onclick="cancelEdit()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Programme builder enhancement - Builder functionality
+    
+    // Global state
+    let programmePages = [];
+    let currentEditingPage = null;
+    let pageIdCounter = 1;
+    
+    // Theme configuration
+    const themes = {
+      classic: { bg: '#ffffff', heading: '#1a1a1a', accent: '#0056b3', color: '#2c2c2c' },
+      fairy:   { bg: '#fce4ec', heading: '#2e0854', accent: '#8e24aa', color: '#4a148c' },
+      forest:  { bg: '#e8f5e8', heading: '#0d4014', accent: '#388e3c', color: '#1b5e20' },
+      arabian: { bg: '#fff8e1', heading: '#bf360c', accent: '#ff9800', color: '#e65100' },
+      spy:     { bg: '#f5f5f5', heading: '#000000', accent: '#424242', color: '#212121' },
+      drama:   { bg: '#ffebee', heading: '#7f0000', accent: '#d32f2f', color: '#b71c1c' }
+    };
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      setupEventListeners();
+      updatePagesList();
+      setupLivePreview();
+    });
+    
+    function setupEventListeners() {
+      // Template buttons
+      document.querySelectorAll('.template-button').forEach(btn => {
+        btn.addEventListener('click', () => editPage(btn.dataset.template));
+      });
+      
+      // Theme selector
+      document.getElementById('programmeTheme').addEventListener('change', updateAllPreviews);
+      
+      // File upload previews
+      setupFilePreview('coverImageFile', 'coverImagePreview');
+      setupFilePreview('paragraphImageFile', 'paragraphImagePreview');
+      setupFilePreview('blankImageFile', 'blankImagePreview');
+      setupFilePreview('comingSoonImageFile', 'comingSoonImagePreview');
+      
+      // Gallery layout change
+      document.getElementById('galleryLayout').addEventListener('change', updateGalleryInputs);
+      
+      // Export button
+      document.getElementById('exportProgrammeBtn').addEventListener('click', exportProgramme);
+      
+      // Preview button
+      document.getElementById('previewProgrammeBtn').addEventListener('click', previewFullProgramme);
+    }
+    
+    function setupLivePreview() {
+      // Add live preview event listeners for all form inputs
+      const editors = ['cover', 'paragraph', 'credits', 'reviews', 'coming-soon'];
+      editors.forEach(editor => {
+        const editorEl = document.getElementById(editor + 'Editor');
+        if (editorEl) {
+          editorEl.addEventListener('input', () => updatePreview(editor));
+          editorEl.addEventListener('change', () => updatePreview(editor));
+        }
+      });
+    }
+    
+    function setupFilePreview(fileInputId, previewId) {
+      document.getElementById(fileInputId).addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const preview = document.getElementById(previewId);
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            preview.innerHTML = `<img src="${event.target.result}" class="image-preview" alt="Preview">`;
+            preview.parentElement.classList.add('has-image');
+          };
+          reader.readAsDataURL(file);
+        } else {
+          preview.innerHTML = 'Click to upload image';
+          preview.parentElement.classList.remove('has-image');
+        }
+      });
+    }
+    
+    function editPage(template, pageId = null) {
+      // Hide all editors and empty state
+      document.getElementById('emptyState').style.display = 'none';
+      document.querySelectorAll('.page-editor').forEach(editor => editor.classList.remove('active'));
+      
+      // Show the selected editor
+      const editor = document.getElementById(template + 'Editor');
+      if (editor) {
+        editor.classList.add('active');
+        currentEditingPage = { template, id: pageId };
+        
+        // If editing existing page, load data
+        if (pageId) {
+          loadPageData(pageId);
+        } else {
+          clearEditor(template);
+        }
+        
+        // Setup specific editor features
+        if (template === 'credits') {
+          setupCreditsEditor();
+        } else if (template === 'image-gallery') {
+          updateGalleryInputs();
+        } else if (template === 'reviews') {
+          setupReviewsEditor();
+        }
+        
+        // Update preview
+        updatePreview(template);
+      }
+    }
+    
+    function clearEditor(template) {
+      const editor = document.getElementById(template + 'Editor');
+      editor.querySelectorAll('input, textarea, select').forEach(input => {
+        if (input.type === 'file') {
+          input.value = '';
+        } else {
+          input.value = '';
+        }
+      });
+      
+      // Clear image previews
+      editor.querySelectorAll('.image-upload').forEach(upload => {
+        const preview = upload.querySelector('div');
+        if (preview) {
+          preview.innerHTML = preview.innerHTML.includes('cover') ? 'Click to upload cover image' :
+                             preview.innerHTML.includes('featured') ? 'Click to upload featured image' :
+                             preview.innerHTML.includes('full-page') ? 'Click to upload full-page image' :
+                             'Click to upload image';
+        }
+        upload.classList.remove('has-image');
+      });
+      
+      // Clear dynamic content
+      if (template === 'credits') {
+        document.getElementById('creditsEntries').innerHTML = '';
+        addCreditsEntry(); // Add one default entry
+      } else if (template === 'reviews') {
+        document.getElementById('reviewsEntries').innerHTML = '';
+        addReviewEntry(); // Add one default entry
+      } else if (template === 'image-gallery') {
+        updateGalleryInputs();
+      }
+    }
+    
+    function loadPageData(pageId) {
+      const page = programmePages.find(p => p.id === pageId);
+      if (!page) return;
+      
+      // Load data based on page template
+      const template = page.template;
+      Object.keys(page.data).forEach(key => {
+        const element = document.getElementById(key);
+        if (element) {
+          element.value = page.data[key];
+        }
+      });
+      
+      // Handle special cases for dynamic content
+      if (template === 'credits' && page.data.entries) {
+        setupCreditsEditor(page.data.entries);
+      } else if (template === 'reviews' && page.data.reviews) {
+        setupReviewsEditor(page.data.reviews);
+      }
+    }
+    
+    function savePage(template) {
+      const pageData = collectPageData(template);
+      const pageTitle = getPageTitle(template, pageData);
+      
+      if (currentEditingPage && currentEditingPage.id) {
+        // Update existing page
+        const page = programmePages.find(p => p.id === currentEditingPage.id);
+        if (page) {
+          page.data = pageData;
+          page.title = pageTitle;
+        }
+      } else {
+        // Add new page
+        const newPage = {
+          id: pageIdCounter++,
+          template: template,
+          title: pageTitle,
+          data: pageData,
+          order: programmePages.length
+        };
+        programmePages.push(newPage);
+      }
+      
+      updatePagesList();
+      cancelEdit();
+      
+      // Show success message
+      showNotification('Page saved successfully!', 'success');
+    }
+    
+    function collectPageData(template) {
+      const data = {};
+      const editor = document.getElementById(template + 'Editor');
+      
+      // Collect form data
+      editor.querySelectorAll('input, textarea, select').forEach(input => {
+        if (input.type === 'file') {
+          if (input.files[0]) {
+            data[input.id] = {
+              file: input.files[0],
+              url: URL.createObjectURL(input.files[0])
+            };
+          }
+        } else {
+          data[input.id] = input.value;
+        }
+      });
+      
+      // Handle special cases
+      if (template === 'credits') {
+        data.entries = collectCreditsEntries();
+      } else if (template === 'reviews') {
+        data.reviews = collectReviewEntries();
+      } else if (template === 'image-gallery') {
+        data.images = collectGalleryImages();
+      }
+      
+      return data;
+    }
+    
+    function getPageTitle(template, data) {
+      switch (template) {
+        case 'cover':
+          return data.coverPlayName || 'Cover Page';
+        case 'paragraph':
+          return data.paragraphTitle || 'Paragraph Page';
+        case 'credits':
+          return data.creditsTitle || 'Credits';
+        case 'image-gallery':
+          return data.galleryTitle || 'Image Gallery';
+        case 'blank-image':
+          return 'Full Page Image';
+        case 'reviews':
+          return data.reviewsTitle || 'Reviews';
+        case 'coming-soon':
+          return data.comingSoonTitle || 'Coming Soon';
+        default:
+          return 'Page';
+      }
+    }
+    
+    function updatePagesList() {
+      const pagesList = document.getElementById('pagesList');
+      const pageCount = document.getElementById('pageCount');
+      
+      pageCount.textContent = programmePages.length;
+      
+      if (programmePages.length === 0) {
+        pagesList.innerHTML = '<p style="color: #999; font-style: italic;">No pages added yet</p>';
+        return;
+      }
+      
+      // Sort pages by order
+      const sortedPages = [...programmePages].sort((a, b) => a.order - b.order);
+      
+      pagesList.innerHTML = sortedPages.map(page => `
+        <div class="page-item" draggable="true" data-page-id="${page.id}">
+          <div class="page-info">
+            <div class="page-title">${page.title}</div>
+            <div class="page-type">${getTemplateDisplayName(page.template)}</div>
+          </div>
+          <div class="page-actions">
+            <button class="page-action edit-btn" onclick="editPage('${page.template}', ${page.id})">Edit</button>
+            <button class="page-action preview-btn" onclick="previewPage(${page.id})">Preview</button>
+            <button class="page-action delete-btn" onclick="deletePage(${page.id})">Delete</button>
+          </div>
+        </div>
+      `).join('');
+      
+      // Setup drag and drop for reordering
+      setupPageReordering();
+    }
+    
+    function getTemplateDisplayName(template) {
+      const names = {
+        'cover': 'Cover Page',
+        'paragraph': 'Paragraph + Image',
+        'credits': 'Credits/List',
+        'image-gallery': 'Image Gallery',
+        'blank-image': 'Blank Image Page',
+        'reviews': 'Reviews/Testimonials',
+        'coming-soon': 'Coming Soon'
+      };
+      return names[template] || template;
+    }
+    
+    function setupPageReordering() {
+      const pageItems = document.querySelectorAll('.page-item');
+      pageItems.forEach(item => {
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragover', handleDragOver);
+        item.addEventListener('drop', handleDrop);
+        item.addEventListener('dragend', handleDragEnd);
+      });
+    }
+    
+    let draggedElement = null;
+    
+    function handleDragStart(e) {
+      draggedElement = this;
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+    
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    }
+    
+    function handleDrop(e) {
+      e.preventDefault();
+      if (this !== draggedElement) {
+        const draggedId = parseInt(draggedElement.dataset.pageId);
+        const targetId = parseInt(this.dataset.pageId);
+        reorderPages(draggedId, targetId);
+      }
+    }
+    
+    function handleDragEnd(e) {
+      this.classList.remove('dragging');
+      draggedElement = null;
+    }
+    
+    function reorderPages(draggedId, targetId) {
+      const draggedPage = programmePages.find(p => p.id === draggedId);
+      const targetPage = programmePages.find(p => p.id === targetId);
+      
+      if (draggedPage && targetPage) {
+        const tempOrder = draggedPage.order;
+        draggedPage.order = targetPage.order;
+        targetPage.order = tempOrder;
+        
+        updatePagesList();
+        showNotification('Pages reordered successfully!', 'success');
+      }
+    }
+    
+    function deletePage(pageId) {
+      if (confirm('Are you sure you want to delete this page?')) {
+        programmePages = programmePages.filter(p => p.id !== pageId);
+        updatePagesList();
+        
+        // If currently editing this page, cancel edit
+        if (currentEditingPage && currentEditingPage.id === pageId) {
+          cancelEdit();
+        }
+        
+        showNotification('Page deleted successfully!', 'success');
+      }
+    }
+    
+    function cancelEdit() {
+      document.querySelectorAll('.page-editor').forEach(editor => editor.classList.remove('active'));
+      document.getElementById('emptyState').style.display = programmePages.length === 0 ? 'block' : 'none';
+      currentEditingPage = null;
+    }
+    
+    function updatePreview(template) {
+      const preview = document.getElementById(template + 'Preview') || 
+                     document.getElementById(template + 'LivePreview');
+      if (!preview) return;
+      
+      const theme = themes[document.getElementById('programmeTheme').value] || themes.classic;
+      const data = collectPageData(template);
+      
+      let previewHTML = '';
+      
+      switch (template) {
+        case 'cover':
+          previewHTML = generateCoverPreview(data, theme);
+          break;
+        case 'paragraph':
+          previewHTML = generateParagraphPreview(data, theme);
+          break;
+        case 'credits':
+          previewHTML = generateCreditsPreview(data, theme);
+          break;
+        case 'image-gallery':
+          previewHTML = generateGalleryPreview(data, theme);
+          break;
+        case 'blank-image':
+          previewHTML = generateBlankImagePreview(data, theme);
+          break;
+        case 'reviews':
+          previewHTML = generateReviewsPreview(data, theme);
+          break;
+        case 'coming-soon':
+          previewHTML = generateComingSoonPreview(data, theme);
+          break;
+      }
+      
+      preview.innerHTML = `
+        <div style="background: ${theme.bg}; padding: 20px; border-radius: 8px; color: ${theme.color};">
+          <h4 style="margin-top: 0; color: ${theme.heading};">Live Preview</h4>
+          ${previewHTML}
+        </div>
+      `;
+    }
+    
+    function generateCoverPreview(data, theme) {
+      return `
+        <div style="text-align: center;">
+          ${data.coverImageFile ? `<img src="${data.coverImageFile.url}" style="max-width: 200px; max-height: 150px; border-radius: 6px; margin-bottom: 15px;">` : ''}
+          <h2 style="color: ${theme.heading}; margin: 10px 0;">${data.coverPlayName || 'Play Name'}</h2>
+          <p style="color: ${theme.accent}; font-weight: bold; margin: 5px 0;">${data.coverDate || 'Date'}</p>
+          <p style="color: ${theme.accent}; font-weight: bold; margin: 5px 0;">${data.coverVenue || 'Venue'}</p>
+          <p style="color: ${theme.accent}; margin: 5px 0;">Director: ${data.coverDirector || 'Director'}</p>
+          ${data.coverSynopsis ? `<p style="margin: 15px 0; font-style: italic;">${data.coverSynopsis}</p>` : ''}
+          ${data.coverContact ? `<div style="margin: 15px 0; font-size: 0.9em;">${data.coverContact.replace(/\n/g, '<br>')}</div>` : ''}
+        </div>
+      `;
+    }
+    
+    function generateParagraphPreview(data, theme) {
+      const imageHTML = data.paragraphImageFile ? 
+        `<img src="${data.paragraphImageFile.url}" style="max-width: 150px; max-height: 150px; border-radius: 6px;">` : '';
+      
+      const contentHTML = `
+        <h3 style="color: ${theme.heading}; margin-top: 0;">${data.paragraphTitle || 'Page Title'}</h3>
+        <div style="line-height: 1.6;">${data.paragraphContent ? data.paragraphContent.replace(/\n/g, '<br>') : 'Content will appear here...'}</div>
+      `;
+      
+      if (!imageHTML) return contentHTML;
+      
+      switch (data.paragraphImagePos) {
+        case 'above':
+          return `<div style="text-align: center; margin-bottom: 15px;">${imageHTML}</div>${contentHTML}`;
+        case 'below':
+          return `${contentHTML}<div style="text-align: center; margin-top: 15px;">${imageHTML}</div>`;
+        case 'right':
+          return `<div style="display: flex; gap: 15px; align-items: flex-start;"><div style="flex: 1;">${contentHTML}</div><div>${imageHTML}</div></div>`;
+        case 'left':
+          return `<div style="display: flex; gap: 15px; align-items: flex-start;"><div>${imageHTML}</div><div style="flex: 1;">${contentHTML}</div></div>`;
+        default:
+          return `${contentHTML}<div style="text-align: center; margin-top: 15px;">${imageHTML}</div>`;
+      }
+    }
+    
+    function generateCreditsPreview(data, theme) {
+      const entries = data.entries || [];
+      if (entries.length === 0) {
+        return `
+          <h3 style="color: ${theme.heading}; margin-top: 0;">${data.creditsTitle || 'Credits'}</h3>
+          <p style="color: #999; font-style: italic;">Add entries to see preview...</p>
+        `;
+      }
+      
+      const listHTML = entries.map(entry => {
+        if (data.creditsType === 'simple') {
+          return `<li>${entry.name || entry.text || ''}</li>`;
+        } else {
+          return `<li>${entry.name || ''} ${entry.role ? `- ${entry.role}` : ''}</li>`;
+        }
+      }).join('');
+      
+      return `
+        <h3 style="color: ${theme.heading}; margin-top: 0;">${data.creditsTitle || 'Credits'}</h3>
+        <ul style="list-style: none; padding: 0; text-align: center;">
+          ${listHTML}
+        </ul>
+      `;
+    }
+    
+    function generateGalleryPreview(data, theme) {
+      const images = data.images || [];
+      const layout = data.galleryLayout || '1';
+      const cols = layout === '4' ? 2 : layout === '3' ? 3 : layout === '2' ? 2 : 1;
+      
+      const imageHTML = images.map(img => 
+        img ? `<img src="${img.url}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px;">` : 
+              '<div style="width: 100%; height: 100px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999;">No image</div>'
+      ).join('');
+      
+      return `
+        <h3 style="color: ${theme.heading}; margin-top: 0;">${data.galleryTitle || 'Image Gallery'}</h3>
+        <div style="display: grid; grid-template-columns: repeat(${cols}, 1fr); gap: 10px;">
+          ${imageHTML}
+        </div>
+      `;
+    }
+    
+    function generateBlankImagePreview(data, theme) {
+      if (data.blankImageFile) {
+        return `<img src="${data.blankImageFile.url}" style="width: 100%; max-height: 300px; object-fit: contain; border-radius: 6px;">`;
+      }
+      return '<div style="width: 100%; height: 200px; background: #f0f0f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #999;">Full page image will appear here</div>';
+    }
+    
+    function generateReviewsPreview(data, theme) {
+      const reviews = data.reviews || [];
+      if (reviews.length === 0) {
+        return `
+          <h3 style="color: ${theme.heading}; margin-top: 0;">${data.reviewsTitle || 'Reviews'}</h3>
+          <p style="color: #999; font-style: italic;">Add reviews to see preview...</p>
+        `;
+      }
+      
+      const reviewsHTML = reviews.map(review => `
+        <blockquote style="border-left: 3px solid ${theme.accent}; padding-left: 15px; margin: 15px 0; font-style: italic;">
+          "${review.quote || ''}"
+          ${review.attribution ? `<footer style="margin-top: 8px; font-style: normal; color: ${theme.accent};">— ${review.attribution}</footer>` : ''}
+        </blockquote>
+      `).join('');
+      
+      return `
+        <h3 style="color: ${theme.heading}; margin-top: 0;">${data.reviewsTitle || 'Reviews'}</h3>
+        ${reviewsHTML}
+      `;
+    }
+    
+    function generateComingSoonPreview(data, theme) {
+      return `
+        <h3 style="color: ${theme.heading}; margin-top: 0;">${data.comingSoonTitle || 'Coming Soon'}</h3>
+        ${data.comingSoonImageFile ? `<img src="${data.comingSoonImageFile.url}" style="max-width: 200px; max-height: 150px; border-radius: 6px; float: right; margin-left: 15px;">` : ''}
+        <div style="line-height: 1.6;">${data.comingSoonContent ? data.comingSoonContent.replace(/\n/g, '<br>') : 'Coming soon content will appear here...'}</div>
+      `;
+    }
+    
+    // Specific editor setup functions
+    function setupCreditsEditor(existingEntries = null) {
+      const container = document.getElementById('creditsEntries');
+      container.innerHTML = '';
+      
+      if (existingEntries && existingEntries.length > 0) {
+        existingEntries.forEach(entry => addCreditsEntry(entry));
+      } else {
+        addCreditsEntry(); // Add one default entry
+      }
+    }
+    
+    function addCreditsEntry(data = {}) {
+      const container = document.getElementById('creditsEntries');
+      const entryDiv = document.createElement('div');
+      entryDiv.className = 'credits-entry';
+      entryDiv.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px; align-items: center;';
+      
+      const creditsType = document.getElementById('creditsType').value;
+      
+      if (creditsType === 'simple') {
+        entryDiv.innerHTML = `
+          <input type="text" placeholder="List item" value="${data.text || ''}" style="flex: 1;">
+          <button type="button" onclick="this.parentElement.remove(); updatePreview('credits');" style="padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 3px;">Remove</button>
+        `;
+      } else {
+        entryDiv.innerHTML = `
+          <input type="text" placeholder="Name" value="${data.name || ''}" style="flex: 1;">
+          <input type="text" placeholder="Role" value="${data.role || ''}" style="flex: 1;">
+          <button type="button" onclick="this.parentElement.remove(); updatePreview('credits');" style="padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 3px;">Remove</button>
+        `;
+      }
+      
+      container.appendChild(entryDiv);
+      
+      // Add input event listeners for live preview
+      entryDiv.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', () => updatePreview('credits'));
+      });
+    }
+    
+    function collectCreditsEntries() {
+      const entries = [];
+      document.querySelectorAll('#creditsEntries .credits-entry').forEach(entry => {
+        const inputs = entry.querySelectorAll('input');
+        if (inputs.length === 1) {
+          // Simple list
+          const text = inputs[0].value.trim();
+          if (text) entries.push({ text });
+        } else {
+          // Name-role format
+          const name = inputs[0].value.trim();
+          const role = inputs[1].value.trim();
+          if (name || role) entries.push({ name, role });
+        }
+      });
+      return entries;
+    }
+    
+    function setupReviewsEditor(existingReviews = null) {
+      const container = document.getElementById('reviewsEntries');
+      container.innerHTML = '';
+      
+      if (existingReviews && existingReviews.length > 0) {
+        existingReviews.forEach(review => addReviewEntry(review));
+      } else {
+        addReviewEntry(); // Add one default entry
+      }
+    }
+    
+    function addReviewEntry(data = {}) {
+      const container = document.getElementById('reviewsEntries');
+      const entryDiv = document.createElement('div');
+      entryDiv.className = 'review-entry';
+      entryDiv.style.cssText = 'border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 6px; background: #f9f9f9;';
+      
+      entryDiv.innerHTML = `
+        <div style="margin-bottom: 10px;">
+          <label style="display: block; margin-bottom: 5px;">Review/Quote:</label>
+          <textarea placeholder="Enter the review or quote here..." style="width: 100%; height: 60px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; resize: vertical;">${data.quote || ''}</textarea>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <div style="flex: 1;">
+            <label style="display: block; margin-bottom: 5px;">Attribution (optional):</label>
+            <input type="text" placeholder="e.g. John Smith, The Times" value="${data.attribution || ''}" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+          </div>
+          <button type="button" onclick="this.parentElement.parentElement.remove(); updatePreview('reviews');" style="padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 3px; margin-top: 20px;">Remove</button>
+        </div>
+      `;
+      
+      container.appendChild(entryDiv);
+      
+      // Add input event listeners for live preview
+      entryDiv.querySelectorAll('input, textarea').forEach(input => {
+        input.addEventListener('input', () => updatePreview('reviews'));
+      });
+    }
+    
+    function collectReviewEntries() {
+      const reviews = [];
+      document.querySelectorAll('#reviewsEntries .review-entry').forEach(entry => {
+        const quote = entry.querySelector('textarea').value.trim();
+        const attribution = entry.querySelector('input').value.trim();
+        if (quote) reviews.push({ quote, attribution });
+      });
+      return reviews;
+    }
+    
+    function updateGalleryInputs() {
+      const layout = document.getElementById('galleryLayout').value;
+      const container = document.getElementById('galleryImages');
+      const imageCount = parseInt(layout);
+      
+      container.innerHTML = '';
+      
+      for (let i = 0; i < imageCount; i++) {
+        const imageDiv = document.createElement('div');
+        imageDiv.style.cssText = 'margin-bottom: 15px; padding: 15px; border: 1px solid #ddd; border-radius: 6px; background: #f9f9f9;';
+        imageDiv.innerHTML = `
+          <label style="display: block; margin-bottom: 5px;">Image ${i + 1}:</label>
+          <div class="image-upload" onclick="document.getElementById('galleryImage${i}').click()">
+            <div id="galleryImagePreview${i}">Click to upload image ${i + 1}</div>
+            <input type="file" id="galleryImage${i}" accept="image/*" style="display: none;">
+          </div>
+        `;
+        container.appendChild(imageDiv);
+        
+        // Setup file preview
+        setupFilePreview(`galleryImage${i}`, `galleryImagePreview${i}`);
+        
+        // Add change listener for live preview
+        document.getElementById(`galleryImage${i}`).addEventListener('change', () => updatePreview('image-gallery'));
+      }
+    }
+    
+    function collectGalleryImages() {
+      const images = [];
+      const layout = document.getElementById('galleryLayout').value;
+      const imageCount = parseInt(layout);
+      
+      for (let i = 0; i < imageCount; i++) {
+        const input = document.getElementById(`galleryImage${i}`);
+        if (input && input.files[0]) {
+          images.push({
+            file: input.files[0],
+            url: URL.createObjectURL(input.files[0])
+          });
+        } else {
+          images.push(null);
+        }
+      }
+      
+      return images;
+    }
+    
+    function updateAllPreviews() {
+      const activeEditor = document.querySelector('.page-editor.active');
+      if (activeEditor) {
+        const template = activeEditor.id.replace('Editor', '');
+        updatePreview(template);
+      }
+    }
+    
+    function previewPage(pageId) {
+      const page = programmePages.find(p => p.id === pageId);
+      if (!page) return;
+      
+      // Open preview in new window
+      const previewWindow = window.open('', '_blank', 'width=800,height=1000');
+      const theme = themes[document.getElementById('programmeTheme').value] || themes.classic;
+      
+      let previewHTML = '';
+      switch (page.template) {
+        case 'cover':
+          previewHTML = generateCoverPreview(page.data, theme);
+          break;
+        case 'paragraph':
+          previewHTML = generateParagraphPreview(page.data, theme);
+          break;
+        case 'credits':
+          previewHTML = generateCreditsPreview(page.data, theme);
+          break;
+        case 'image-gallery':
+          previewHTML = generateGalleryPreview(page.data, theme);
+          break;
+        case 'blank-image':
+          previewHTML = generateBlankImagePreview(page.data, theme);
+          break;
+        case 'reviews':
+          previewHTML = generateReviewsPreview(page.data, theme);
+          break;
+        case 'coming-soon':
+          previewHTML = generateComingSoonPreview(page.data, theme);
+          break;
+      }
+      
+      previewWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Page Preview - ` + page.title + `</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+            .page { background: ` + theme.bg + `; padding: 40px; border-radius: 8px; color: ` + theme.color + `; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+          </style>
+        </head>
+        <body>
+          <div class="page">
+            ` + previewHTML + `
+          </div>
+        </body>
+        </html>
+      `);
+    }
+    
+    function previewFullProgramme() {
+      if (programmePages.length === 0) {
+        alert('No pages to preview. Add some pages first.');
+        return;
+      }
+      
+      // Open full programme preview in new window
+      const previewWindow = window.open('', '_blank', 'width=1000,height=1200');
+      const theme = themes[document.getElementById('programmeTheme').value] || themes.classic;
+      
+      // Sort pages by order
+      const sortedPages = [...programmePages].sort((a, b) => a.order - b.order);
+      
+      const pagesHTML = sortedPages.map(page => {
+        let pageHTML = '';
+        switch (page.template) {
+          case 'cover':
+            pageHTML = generateCoverPreview(page.data, theme);
+            break;
+          case 'paragraph':
+            pageHTML = generateParagraphPreview(page.data, theme);
+            break;
+          case 'credits':
+            pageHTML = generateCreditsPreview(page.data, theme);
+            break;
+          case 'image-gallery':
+            pageHTML = generateGalleryPreview(page.data, theme);
+            break;
+          case 'blank-image':
+            pageHTML = generateBlankImagePreview(page.data, theme);
+            break;
+          case 'reviews':
+            pageHTML = generateReviewsPreview(page.data, theme);
+            break;
+          case 'coming-soon':
+            pageHTML = generateComingSoonPreview(page.data, theme);
+            break;
+        }
+        
+        return '<div class="page" style="background: ' + theme.bg + '; padding: 40px; margin-bottom: 20px; border-radius: 8px; color: ' + theme.color + '; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">' + pageHTML + '</div>';
+      }).join('');
+      
+      previewWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Programme Preview</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+            .programme { max-width: 800px; margin: 0 auto; }
+            h1 { text-align: center; color: #333; margin-bottom: 30px; }
+            @media print { 
+              body { margin: 0; background: white; } 
+              .page { page-break-after: always; margin-bottom: 0; box-shadow: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="programme">
+            <h1>Programme Preview</h1>
+            ` + pagesHTML + `
+          </div>
+          <script>
+            // Auto-focus for better printing
+            window.addEventListener('load', () => {
+              document.title = 'Programme Preview - Ready to Print';
+            });
+          <\/script>
+        </body>
+        </html>
+      `);
+    }
+    
+    function exportProgramme() {
+      if (programmePages.length === 0) {
+        alert('No pages to export. Add some pages first.');
+        return;
+      }
+      
+      // Get the current theme
+      const theme = document.getElementById('programmeTheme').value;
+      
+      // Prepare data for server
+      const exportData = {
+        theme: theme,
+        pages: programmePages
+      };
+      
+      // Show loading state
+      const exportBtn = document.getElementById('exportProgrammeBtn');
+      const originalText = exportBtn.textContent;
+      exportBtn.textContent = 'Generating PDF...';
+      exportBtn.disabled = true;
+      
+      // Send to server for PDF generation
+      fetch('/builder/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(exportData)
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to generate PDF');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `programme-${Date.now()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        showNotification('PDF generated successfully!', 'success');
+      })
+      .catch(error => {
+        console.error('Error generating PDF:', error);
+        showNotification('Error generating PDF. Please try again.', 'error');
+      })
+      .finally(() => {
+        // Reset button
+        exportBtn.textContent = originalText;
+        exportBtn.disabled = false;
+      });
+    }
+    
+    function showNotification(message, type = 'info') {
+      // Simple notification system
+      const notification = document.createElement('div');
+      const bgColor = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007bff';
+      notification.style.cssText = 
+        'position: fixed; top: 20px; right: 20px; padding: 15px 20px; border-radius: 6px; color: white; font-weight: bold; z-index: 1000; background: ' + bgColor + '; box-shadow: 0 4px 12px rgba(0,0,0,0.2);';
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
