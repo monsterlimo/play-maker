@@ -162,29 +162,34 @@ app.post('/builder/generate', express.json(), (req, res) => {
       doc.addPage({ size: 'A5', margin: 40 });
     }
     
+    // Programme builder enhancement - Use custom page colors if available
+    const customTheme = { ...t };
+    if (page.data.coverBackgroundColor || page.data.paragraphBackgroundColor || 
+        page.data.creditsBackgroundColor || page.data.galleryBackgroundColor) {
+      // Note: PDF background colors require additional setup, for now we'll use custom text colors
+      if (page.data.coverTextColor || page.data.paragraphTextColor || 
+          page.data.creditsTextColor || page.data.galleryTextColor) {
+        customTheme.color = page.data.coverTextColor || page.data.paragraphTextColor || 
+                           page.data.creditsTextColor || page.data.galleryTextColor || t.color;
+        customTheme.heading = customTheme.color;
+      }
+    }
+    
     addThemedBorder();
     
+    // Programme builder enhancement - Only 4 allowed templates
     switch (page.template) {
       case 'cover':
-        generateCoverPage(doc, page.data, t);
+        generateCoverPage(doc, page.data, customTheme);
         break;
       case 'paragraph':
-        generateParagraphPage(doc, page.data, t);
+        generateParagraphPage(doc, page.data, customTheme);
         break;
       case 'credits':
-        generateCreditsPage(doc, page.data, t);
+        generateCreditsPage(doc, page.data, customTheme);
         break;
       case 'image-gallery':
-        generateGalleryPage(doc, page.data, t);
-        break;
-      case 'blank-image':
-        generateBlankImagePage(doc, page.data, t);
-        break;
-      case 'reviews':
-        generateReviewsPage(doc, page.data, t);
-        break;
-      case 'coming-soon':
-        generateComingSoonPage(doc, page.data, t);
+        generateGalleryPage(doc, page.data, customTheme);
         break;
     }
   });
@@ -247,34 +252,6 @@ app.post('/builder/generate', express.json(), (req, res) => {
     doc.moveDown();
     addSeparator();
     doc.fontSize(12).fillColor(theme.color).text('Image gallery layout (images would be displayed here)', { align: 'center' });
-  }
-  
-  function generateBlankImagePage(doc, data, theme) {
-    doc.fontSize(12).fillColor(theme.color).text('Full-page image would be displayed here', { align: 'center' });
-  }
-  
-  function generateReviewsPage(doc, data, theme) {
-    doc.fontSize(18).fillColor(theme.heading).text(data.reviewsTitle || 'Reviews', { align: 'center' });
-    doc.moveDown();
-    addSeparator();
-    
-    const reviews = data.reviews || [];
-    reviews.forEach(review => {
-      if (review.quote) {
-        doc.fontSize(12).fillColor(theme.color).text(`"${review.quote}"`, { align: 'justify', style: 'italic' });
-        if (review.attribution) {
-          doc.fontSize(10).fillColor(theme.accent).text(`— ${review.attribution}`, { align: 'right' });
-        }
-        doc.moveDown();
-      }
-    });
-  }
-  
-  function generateComingSoonPage(doc, data, theme) {
-    doc.fontSize(18).fillColor(theme.heading).text(data.comingSoonTitle || 'Coming Soon', { align: 'center' });
-    doc.moveDown();
-    addSeparator();
-    doc.fontSize(12).fillColor(theme.color).text(data.comingSoonContent || '', { align: 'justify' });
   }
 });
 
