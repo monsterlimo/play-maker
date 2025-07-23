@@ -63,7 +63,7 @@
     
     .builder-main {
       display: grid;
-      grid-template-columns: 380px 1fr;
+      grid-template-columns: 380px 1fr 320px;
       gap: 30px;
     }
     
@@ -444,6 +444,91 @@
       color: #1e3c72;
     }
     
+    /* Programme builder enhancement - A5 Preview Pane */
+    .a5-preview-pane {
+      background: white;
+      border-radius: 16px;
+      padding: 25px;
+      height: fit-content;
+      position: sticky;
+      top: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+    
+    .a5-preview-pane h4 {
+      margin: 0 0 20px 0;
+      font-size: 1.3em;
+      font-weight: 700;
+      color: #1e3c72;
+      border-bottom: 3px solid #e3f2fd;
+      padding-bottom: 10px;
+      text-align: center;
+    }
+    
+    .a5-preview-container {
+      position: relative;
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 12px;
+      border: 2px solid #e9ecef;
+    }
+    
+    .a5-preview-page {
+      /* A5 dimensions: 148mm x 210mm = 420px x 595px at 72dpi, scaled down to fit */
+      width: 280px;
+      height: 396px;
+      background: white;
+      margin: 0 auto;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      font-family: 'Times New Roman', serif;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    
+    .a5-preview-content {
+      padding: 20px;
+      height: calc(100% - 40px);
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .a5-preview-overflow-warning {
+      display: none;
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      color: #856404;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-top: 10px;
+      font-size: 12px;
+      text-align: center;
+    }
+    
+    .a5-preview-overflow-warning.show {
+      display: block;
+    }
+    
+    .a5-dimensions-label {
+      text-align: center;
+      font-size: 11px;
+      color: #6c757d;
+      margin-top: 10px;
+      font-style: italic;
+    }
+
+    @media (max-width: 1400px) {
+      .builder-main {
+        grid-template-columns: 360px 1fr;
+      }
+      
+      .a5-preview-pane {
+        display: none;
+      }
+    }
+
     @media (max-width: 1024px) {
       .builder-main {
         grid-template-columns: 1fr;
@@ -732,6 +817,25 @@
         </div>
         
         </div>
+      
+      <!-- Programme builder enhancement - A5 Real-size Preview Pane -->
+      <div class="a5-preview-pane">
+        <h4>📄 A5 Print Preview</h4>
+        <div class="a5-preview-container">
+          <div class="a5-preview-page" id="a5PreviewPage">
+            <div class="a5-preview-content" id="a5PreviewContent">
+              <div style="text-align: center; color: #999; padding: 100px 20px;">
+                Select a page to preview
+              </div>
+            </div>
+          </div>
+          <div class="a5-dimensions-label">148mm × 210mm (A5)</div>
+          <div class="a5-preview-overflow-warning" id="a5OverflowWarning">
+            ⚠️ Content exceeds page boundaries. Consider reducing content or splitting into multiple pages.
+          </div>
+        </div>
+      </div>
+      
       </div>
     </div>
   </div>
@@ -1152,6 +1256,9 @@
           ${previewHTML}
         </div>
       `;
+      
+      // Programme builder enhancement - Update A5 real-size preview
+      updateA5Preview(template, data, customTheme, customBg);
     }
     
     function generateCoverPreview(data, theme) {
@@ -1304,6 +1411,164 @@
         </body>
         </html>
       `);
+    }
+    
+    // Programme builder enhancement - A5 Real-size Preview Function
+    function updateA5Preview(template, data, customTheme, customBg) {
+      const a5PreviewContent = document.getElementById('a5PreviewContent');
+      const a5PreviewPage = document.getElementById('a5PreviewPage');
+      const overflowWarning = document.getElementById('a5OverflowWarning');
+      
+      if (!a5PreviewContent) return;
+      
+      // Set the background color for the page
+      a5PreviewPage.style.background = customBg;
+      
+      let previewHTML = '';
+      
+      switch (template) {
+        case 'cover':
+          previewHTML = generateA5CoverPreview(data, customTheme);
+          break;
+        case 'paragraph':
+          previewHTML = generateA5ParagraphPreview(data, customTheme);
+          break;
+        case 'credits':
+          previewHTML = generateA5CreditsPreview(data, customTheme);
+          break;
+        case 'image-gallery':
+          previewHTML = generateA5GalleryPreview(data, customTheme);
+          break;
+        default:
+          previewHTML = `<div style="text-align: center; color: #999; padding: 100px 20px;">Select a page to preview</div>`;
+      }
+      
+      a5PreviewContent.innerHTML = previewHTML;
+      
+      // Check for content overflow and show warning if needed
+      setTimeout(() => {
+        const contentHeight = a5PreviewContent.scrollHeight;
+        const containerHeight = a5PreviewContent.clientHeight;
+        
+        if (contentHeight > containerHeight) {
+          overflowWarning.classList.add('show');
+        } else {
+          overflowWarning.classList.remove('show');
+        }
+      }, 100);
+    }
+    
+    // Programme builder enhancement - A5-specific preview generators
+    function generateA5CoverPreview(data, theme) {
+      return `
+        <div style="text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center;">
+          ${data.coverImageFile ? `<div style="margin-bottom: 15px;"><img src="${data.coverImageFile.url}" style="max-width: 180px; max-height: 120px; border-radius: 4px; object-fit: cover;"></div>` : ''}
+          <h1 style="color: ${theme.heading}; margin: 15px 0; font-size: 18px; font-weight: bold; line-height: 1.2;">${data.coverPlayName || 'Play Name'}</h1>
+          <p style="color: ${theme.accent || theme.color}; font-weight: bold; margin: 8px 0; font-size: 13px;">${data.coverDate || 'Date'}</p>
+          <p style="color: ${theme.accent || theme.color}; font-weight: bold; margin: 8px 0; font-size: 13px;">${data.coverVenue || 'Venue'}</p>
+          <p style="color: ${theme.accent || theme.color}; margin: 8px 0; font-size: 12px;">Directed by ${data.coverDirector || 'Director'}</p>
+          ${data.coverSynopsis ? `<p style="margin: 15px 0; font-style: italic; font-size: 11px; line-height: 1.4; max-height: 60px; overflow: hidden;">${data.coverSynopsis}</p>` : ''}
+          ${data.coverContact ? `<div style="margin-top: auto; font-size: 10px; line-height: 1.3; max-height: 40px; overflow: hidden;">${data.coverContact.replace(/\n/g, '<br>')}</div>` : ''}
+        </div>
+      `;
+    }
+    
+    function generateA5ParagraphPreview(data, theme) {
+      const imageHTML = data.paragraphImageFile ? 
+        `<img src="${data.paragraphImageFile.url}" style="max-width: 100px; max-height: 100px; border-radius: 4px; object-fit: cover;">` : '';
+      
+      const contentHTML = `
+        <h2 style="color: ${theme.heading}; margin: 0 0 15px 0; font-size: 16px; font-weight: bold;">${data.paragraphTitle || 'Page Title'}</h2>
+        <div style="line-height: 1.5; font-size: 11px; text-align: justify;">${data.paragraphContent ? data.paragraphContent.replace(/\n/g, '<br>') : 'Content will appear here...'}</div>
+      `;
+      
+      if (!imageHTML) return contentHTML;
+      
+      switch (data.paragraphImagePos) {
+        case 'above':
+          return `<div style="text-align: center; margin-bottom: 15px;">${imageHTML}</div>${contentHTML}`;
+        case 'below':
+          return `${contentHTML}<div style="text-align: center; margin-top: 15px;">${imageHTML}</div>`;
+        case 'right':
+          return `<div style="display: flex; gap: 15px; align-items: flex-start;"><div style="flex: 1; min-width: 0;">${contentHTML}</div><div style="flex-shrink: 0;">${imageHTML}</div></div>`;
+        case 'left':
+          return `<div style="display: flex; gap: 15px; align-items: flex-start;"><div style="flex-shrink: 0;">${imageHTML}</div><div style="flex: 1; min-width: 0;">${contentHTML}</div></div>`;
+        default:
+          return `${contentHTML}<div style="text-align: center; margin-top: 15px;">${imageHTML}</div>`;
+      }
+    }
+    
+    function generateA5CreditsPreview(data, theme) {
+      const entries = data.entries || [];
+      if (entries.length === 0) {
+        return `
+          <h2 style="color: ${theme.heading}; margin: 0 0 20px 0; font-size: 16px; font-weight: bold; text-align: center;">${data.creditsTitle || 'Credits'}</h2>
+          <p style="text-align: center; color: #999; font-size: 11px;">No entries added yet</p>
+        `;
+      }
+      
+      const creditsType = data.creditsType || 'detailed';
+      let listHTML = '';
+      
+      if (creditsType === 'simple') {
+        listHTML = entries.map(entry => 
+          `<div style="text-align: center; margin-bottom: 8px; font-size: 11px;">${entry.text || ''}</div>`
+        ).join('');
+      } else {
+        listHTML = entries.map(entry => 
+          `<div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px;">
+            <span style="font-weight: bold;">${entry.name || ''}</span>
+            <span>${entry.role || ''}</span>
+          </div>`
+        ).join('');
+      }
+      
+      return `
+        <h2 style="color: ${theme.heading}; margin: 0 0 20px 0; font-size: 16px; font-weight: bold; text-align: center;">${data.creditsTitle || 'Credits'}</h2>
+        <div>${listHTML}</div>
+      `;
+    }
+    
+    function generateA5GalleryPreview(data, theme) {
+      const images = [];
+      for (let i = 1; i <= 4; i++) {
+        if (data[`galleryImage${i}`]) {
+          images.push(data[`galleryImage${i}`]);
+        }
+      }
+      
+      if (images.length === 0) {
+        return `
+          <h2 style="color: ${theme.heading}; margin: 0 0 20px 0; font-size: 16px; font-weight: bold; text-align: center;">${data.galleryTitle || 'Image Gallery'}</h2>
+          <div style="text-align: center; color: #999; font-size: 11px; padding: 60px 20px;">No images added yet</div>
+        `;
+      }
+      
+      const layout = data.galleryLayout || 'grid';
+      let galleryHTML = '';
+      
+      switch (layout) {
+        case 'single':
+          galleryHTML = `<div style="text-align: center;"><img src="${images[0].url}" style="max-width: 200px; max-height: 280px; border-radius: 4px; object-fit: cover;"></div>`;
+          break;
+        case 'horizontal':
+          galleryHTML = `<div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+            ${images.slice(0, 2).map(img => `<img src="${img.url}" style="width: 110px; height: 110px; border-radius: 4px; object-fit: cover;">`).join('')}
+          </div>`;
+          break;
+        case 'grid':
+        default:
+          const gridCols = images.length <= 2 ? images.length : 2;
+          galleryHTML = `<div style="display: grid; grid-template-columns: repeat(${gridCols}, 1fr); gap: 8px; justify-items: center;">
+            ${images.slice(0, 4).map(img => `<img src="${img.url}" style="width: 100px; height: 100px; border-radius: 4px; object-fit: cover;">`).join('')}
+          </div>`;
+      }
+      
+      return `
+        <h2 style="color: ${theme.heading}; margin: 0 0 15px 0; font-size: 16px; font-weight: bold; text-align: center;">${data.galleryTitle || 'Image Gallery'}</h2>
+        ${galleryHTML}
+        ${data.galleryDescription ? `<p style="margin-top: 15px; font-size: 10px; text-align: center; line-height: 1.4;">${data.galleryDescription}</p>` : ''}
+      `;
     }
     
     // Programme builder enhancement - Specific editor setup functions
