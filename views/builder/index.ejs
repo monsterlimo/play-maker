@@ -903,7 +903,8 @@
       // Programme builder enhancement - Live preview for 4 allowed templates only
       const editors = ['cover', 'paragraph', 'credits', 'image-gallery'];
       editors.forEach(editor => {
-        const editorEl = document.getElementById(editor.replace('-', '') + 'Editor');
+        const editorId = editor === 'image-gallery' ? 'imageGalleryEditor' : editor.replace('-', '') + 'Editor';
+        const editorEl = document.getElementById(editorId);
         if (editorEl) {
           editorEl.addEventListener('input', () => updatePreview(editor));
           editorEl.addEventListener('change', () => updatePreview(editor));
