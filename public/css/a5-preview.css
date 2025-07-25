@@ -1,0 +1,205 @@
+/* A5 Programme Preview Component - Unified CSS for all preview instances */
+
+/* A5 Dimensions: 148mm × 210mm (portrait) */
+/* Aspect Ratio: 148/210 = 0.7047619047619048 */
+/* Using 280px width: height = 280 / 0.7047619 = 397.33px (rounded to 397px) */
+
+.a5-preview-wrapper {
+  /* Container for the A5 preview - can be flexible */
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Prevent any external forces from affecting this container */
+  box-sizing: border-box;
+}
+
+.a5-preview-page {
+  /* STRICT A5 DIMENSIONS - NEVER ALLOW CHANGES */
+  width: 280px !important;
+  height: 397px !important;
+  min-width: 280px !important;
+  max-width: 280px !important;
+  min-height: 397px !important;
+  max-height: 397px !important;
+  
+  /* Visual styling */
+  background: white;
+  margin: 0 auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  position: relative;
+  
+  /* Typography matching A5 print */
+  font-family: 'Times New Roman', serif;
+  font-size: 11px;
+  line-height: 1.4;
+  
+  /* CRITICAL: Prevent any external forces from changing dimensions */
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  resize: none !important;
+  overflow: hidden !important;
+  
+  /* Prevent responsive frameworks from interfering */
+  box-sizing: border-box !important;
+}
+
+.a5-preview-content {
+  /* Content area with fixed boundaries */
+  padding: 20px;
+  width: calc(280px - 40px) !important; /* Exactly 240px content width */
+  height: calc(397px - 40px) !important; /* Exactly 357px content height */
+  overflow: hidden !important;
+  position: relative;
+  
+  /* Strict content boundaries - no flex or resize */
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.a5-preview-label {
+  text-align: center;
+  font-size: 11px;
+  color: #6c757d;
+  margin-top: 10px;
+  font-style: italic;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.a5-preview-overflow-warning {
+  display: none;
+  background: #dc3545 !important;
+  border: 2px solid #721c24 !important;
+  color: white !important;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-top: 15px;
+  font-size: 13px;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+  animation: a5-warning-pulse 2s infinite;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  max-width: 320px; /* Match preview wrapper width */
+}
+
+.a5-preview-overflow-warning.show {
+  display: block !important;
+}
+
+@keyframes a5-warning-pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* Responsive scaling while maintaining A5 proportions */
+@media (max-width: 480px) {
+  .a5-preview-wrapper {
+    padding: 15px;
+  }
+  
+  .a5-preview-page {
+    /* Scale down proportionally for very small screens */
+    transform: scale(0.8);
+    transform-origin: center top;
+  }
+  
+  .a5-preview-label {
+    margin-top: 20px; /* Account for scaled preview */
+  }
+}
+
+@media (max-width: 360px) {
+  .a5-preview-page {
+    /* Further scale down for mobile */
+    transform: scale(0.7);
+    transform-origin: center top;
+  }
+  
+  .a5-preview-label {
+    margin-top: 30px; /* Account for scaled preview */
+  }
+}
+
+/* Utility classes for content styling within A5 preview */
+.a5-content-title {
+  color: inherit;
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0 0 15px 0;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.a5-content-subtitle {
+  color: inherit;
+  font-size: 13px;
+  font-weight: bold;
+  margin: 8px 0;
+  text-align: center;
+}
+
+.a5-content-body {
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: justify;
+  margin: 15px 0;
+}
+
+.a5-content-center {
+  text-align: center;
+}
+
+.a5-content-small {
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+/* Override any external CSS that might interfere */
+.a5-preview-page,
+.a5-preview-page *,
+.a5-preview-content,
+.a5-preview-content * {
+  /* Prevent Bootstrap, Tailwind, or other frameworks from interfering */
+  box-sizing: border-box !important;
+}
+
+/* Ensure the wrapper doesn't grow beyond its container */
+.a5-preview-wrapper {
+  /* Container responsive behavior while keeping preview fixed */
+  max-width: 100%;
+  width: 320px; /* 280px preview + 40px padding */
+}
+
+/* For sticky positioning in sidebars */
+.a5-preview-sticky {
+  position: sticky;
+  top: 20px;
+}
+
+/* Print styles - ensure A5 dimensions are maintained even in print */
+@media print {
+  .a5-preview-page {
+    width: 148mm !important;
+    height: 210mm !important;
+    box-shadow: none;
+    page-break-inside: avoid;
+  }
+  
+  .a5-preview-content {
+    padding: 15mm;
+    width: calc(148mm - 30mm) !important;
+    height: calc(210mm - 30mm) !important;
+  }
+  
+  .a5-preview-label,
+  .a5-preview-overflow-warning {
+    display: none !important;
+  }
+}
