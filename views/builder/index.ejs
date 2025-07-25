@@ -1353,6 +1353,30 @@
               font-size: 1.3em;
               font-weight: 700;
             }
+            /* CRITICAL: Ensure A5 dimensions are ALWAYS enforced */
+            .a5-preview-page {
+              /* Override any possible interference */
+              width: 280px !important;
+              height: 397px !important;
+              min-width: 280px !important;
+              max-width: 280px !important;
+              min-height: 397px !important;
+              max-height: 397px !important;
+              overflow: hidden !important;
+              box-sizing: border-box !important;
+              display: block !important;
+              position: relative !important;
+            }
+            .a5-preview-content {
+              width: calc(280px - 40px) !important;
+              height: calc(397px - 40px) !important;
+              overflow: auto !important;
+              padding: 20px !important;
+              box-sizing: border-box !important;
+              position: absolute !important;
+              top: 0 !important;
+              left: 0 !important;
+            }
             /* Responsive scaling for small screens */
             @media (max-width: 480px) {
               body { margin: 10px; padding: 10px; }
@@ -1371,7 +1395,7 @@
                 box-shadow: none; 
               }
               .a5-preview-content {
-                padding: 15mm;
+                padding: 15mm !important;
                 width: calc(148mm - 30mm) !important;
                 height: calc(210mm - 30mm) !important;
               }
@@ -1730,6 +1754,31 @@
               background: linear-gradient(90deg, transparent, #e9ecef, transparent);
               margin: 20px 0;
             }
+            /* CRITICAL: Ensure A5 dimensions are ALWAYS enforced for every page */
+            .a5-preview-page {
+              /* Override any possible interference */
+              width: 280px !important;
+              height: 397px !important;
+              min-width: 280px !important;
+              max-width: 280px !important;
+              min-height: 397px !important;
+              max-height: 397px !important;
+              overflow: hidden !important;
+              box-sizing: border-box !important;
+              display: block !important;
+              position: relative !important;
+              margin: 0 auto !important;
+            }
+            .a5-preview-content {
+              width: calc(280px - 40px) !important;
+              height: calc(397px - 40px) !important;
+              overflow: auto !important;
+              padding: 20px !important;
+              box-sizing: border-box !important;
+              position: absolute !important;
+              top: 0 !important;
+              left: 0 !important;
+            }
             /* Responsive scaling for small screens */
             @media (max-width: 480px) {
               body { margin: 10px; padding: 10px; }
@@ -1750,7 +1799,7 @@
                 box-shadow: none; 
               }
               .a5-preview-content {
-                padding: 15mm;
+                padding: 15mm !important;
                 width: calc(148mm - 30mm) !important;
                 height: calc(210mm - 30mm) !important;
               }
