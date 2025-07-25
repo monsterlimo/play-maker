@@ -63,7 +63,7 @@
     
     .builder-main {
       display: grid;
-      grid-template-columns: 380px 1fr 320px;
+      grid-template-columns: 380px 1fr 370px; /* Fixed 370px for A5 preview */
       gap: 30px;
     }
     
@@ -453,6 +453,11 @@
       position: sticky;
       top: 20px;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      /* Strict sizing - never allow responsive shrinking */
+      min-width: 370px !important; /* 320px container + 50px padding */
+      width: 370px !important;
+      flex-shrink: 0 !important;
+      flex-grow: 0 !important;
     }
     
     .a5-preview-pane h4 {
@@ -471,44 +476,73 @@
       padding: 20px;
       border-radius: 12px;
       border: 2px solid #e9ecef;
+      /* Ensure container cannot be smaller than preview + padding */
+      min-width: 320px !important; /* 280px + 40px padding */
+      width: 320px !important;
+      /* Prevent any resizing or flexible behavior */
+      flex-shrink: 0 !important;
+      flex-grow: 0 !important;
     }
     
     .a5-preview-page {
-      /* A5 dimensions: 148mm x 210mm = 420px x 595px at 72dpi, scaled down to fit */
-      width: 280px;
-      height: 396px;
+      /* A5 dimensions: 148mm x 210mm = exact aspect ratio 0.7047619 */
+      /* Using 280px width: height = 280 / 0.7047619 = 397.33px (rounded to 397px) */
+      width: 280px !important;
+      height: 397px !important;
+      min-width: 280px !important;
+      max-width: 280px !important;
+      min-height: 397px !important;
+      max-height: 397px !important;
       background: white;
       margin: 0 auto;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
       border-radius: 4px;
-      overflow: hidden;
+      overflow: hidden !important;
       position: relative;
       font-family: 'Times New Roman', serif;
       font-size: 11px;
       line-height: 1.4;
+      /* Prevent any external forces from changing dimensions */
+      flex-shrink: 0 !important;
+      flex-grow: 0 !important;
+      resize: none !important;
     }
     
     .a5-preview-content {
       padding: 20px;
-      height: calc(100% - 40px);
-      overflow: hidden;
+      width: calc(280px - 40px) !important; /* Exactly 240px content width */
+      height: calc(397px - 40px) !important; /* Exactly 357px content height */
+      overflow: hidden !important;
       position: relative;
+      /* Strict content boundaries - no flex or resize */
+      flex-shrink: 0 !important;
+      flex-grow: 0 !important;
+      box-sizing: border-box !important;
     }
     
     .a5-preview-overflow-warning {
       display: none;
-      background: #fff3cd;
-      border: 1px solid #ffeaa7;
-      color: #856404;
-      padding: 8px 12px;
-      border-radius: 6px;
-      margin-top: 10px;
-      font-size: 12px;
+      background: #dc3545 !important;
+      border: 2px solid #721c24 !important;
+      color: white !important;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-top: 15px;
+      font-size: 13px;
+      font-weight: bold;
       text-align: center;
+      box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+      animation: pulse 2s infinite;
     }
     
     .a5-preview-overflow-warning.show {
-      display: block;
+      display: block !important;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
     }
     
     .a5-dimensions-label {
@@ -519,7 +553,7 @@
       font-style: italic;
     }
 
-    @media (max-width: 1400px) {
+    @media (max-width: 1500px) {
       .builder-main {
         grid-template-columns: 360px 1fr;
       }
@@ -831,7 +865,7 @@
           </div>
           <div class="a5-dimensions-label">148mm × 210mm (A5)</div>
           <div class="a5-preview-overflow-warning" id="a5OverflowWarning">
-            ⚠️ Content exceeds page boundaries. Consider reducing content or splitting into multiple pages.
+            ⚠️ Content exceeds A5 page boundaries. Consider reducing content or splitting into multiple pages.
           </div>
         </div>
       </div>
@@ -1449,17 +1483,64 @@
       
       a5PreviewContent.innerHTML = previewHTML;
       
-      // Check for content overflow and show warning if needed
-      setTimeout(() => {
-        const contentHeight = a5PreviewContent.scrollHeight;
-        const containerHeight = a5PreviewContent.clientHeight;
+      // Check for content overflow and show warning if needed - improved detection
+      // Use multiple detection methods and immediate + delayed checks
+      const checkOverflow = () => {
+        // Create a temporary div to measure true content height more accurately
+        const tempDiv = document.createElement('div');
+        tempDiv.style.cssText = `
+          position: absolute;
+          visibility: hidden;
+          width: 240px; /* Match content width */
+          font-family: 'Times New Roman', serif;
+          font-size: 11px;
+          line-height: 1.4;
+          padding: 0;
+          margin: 0;
+          box-sizing: border-box;
+        `;
+        tempDiv.innerHTML = a5PreviewContent.innerHTML;
+        document.body.appendChild(tempDiv);
         
-        if (contentHeight > containerHeight) {
+        const trueContentHeight = tempDiv.offsetHeight;
+        document.body.removeChild(tempDiv);
+        
+        const containerHeight = 357; // Fixed A5 content height
+        const contentWidth = a5PreviewContent.scrollWidth;
+        const containerWidth = a5PreviewContent.clientWidth;
+        
+        // Check both vertical and horizontal overflow with better detection
+        const hasVerticalOverflow = trueContentHeight > containerHeight + 5; // 5px tolerance
+        const hasHorizontalOverflow = contentWidth > containerWidth + 2; // 2px tolerance
+        
+        if (hasVerticalOverflow || hasHorizontalOverflow) {
           overflowWarning.classList.add('show');
+          // Update warning text to be more specific
+          let warningText = '⚠️ Content exceeds A5 page boundaries. ';
+          if (hasVerticalOverflow && hasHorizontalOverflow) {
+            warningText += `Content is too tall (${trueContentHeight}px) and too wide for the page.`;
+          } else if (hasVerticalOverflow) {
+            warningText += `Content is too tall (${trueContentHeight}px vs ${containerHeight}px available).`;
+          } else {
+            warningText += 'Content is too wide for the page.';
+          }
+          warningText += ' Consider reducing content or splitting into multiple pages.';
+          overflowWarning.textContent = warningText;
+          
+          // Add visual indication to the preview itself
+          a5PreviewContent.style.border = '2px solid #dc3545';
+          a5PreviewContent.style.borderRadius = '4px';
         } else {
           overflowWarning.classList.remove('show');
+          // Remove visual indication
+          a5PreviewContent.style.border = 'none';
         }
-      }, 100);
+      };
+      
+      // Check immediately and after a brief delay to catch dynamic content
+      checkOverflow();
+      setTimeout(checkOverflow, 50);
+      setTimeout(checkOverflow, 200);
     }
     
     // Programme builder enhancement - A5-specific preview generators
