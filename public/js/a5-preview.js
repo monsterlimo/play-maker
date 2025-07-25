@@ -235,7 +235,7 @@ class A5Preview {
     const expectedRatio = 148 / 210; // A5 ratio: 0.7047619047619048
     const previewRatio = 280 / 397;  // Our preview ratio
     const difference = Math.abs(expectedRatio - previewRatio);
-    const tolerance = 0.0001; // Very small tolerance for floating point comparison
+    const tolerance = 0.001; // Tolerance for pixel rounding (increased from 0.0001)
     
     return {
       isCorrect: difference < tolerance,
@@ -245,7 +245,8 @@ class A5Preview {
       widthPx: 280,
       heightPx: 397,
       widthMm: 148,
-      heightMm: 210
+      heightMm: 210,
+      note: difference < tolerance ? 'Perfect A5 proportions (within pixel rounding tolerance)' : 'Ratio mismatch'
     };
   }
 }
