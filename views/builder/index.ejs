@@ -426,14 +426,7 @@
       box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
     }
     
-    .live-preview {
-      border: 2px solid #e9ecef;
-      border-radius: 12px;
-      padding: 25px;
-      margin-top: 25px;
-      background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
-      min-height: 200px;
-    }
+
     
     .theme-selector {
       margin-bottom: 25px;
@@ -463,22 +456,42 @@
 
     @media (max-width: 1500px) {
       .builder-main {
-        grid-template-columns: 360px 1fr;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
       }
       
       .a5-preview-pane {
-        display: none;
+        /* Move A5 preview below editor instead of hiding it */
+        order: 3;
+        position: static;
+        width: 100% !important;
+        min-width: auto !important;
+        max-width: 400px;
+        margin: 20px auto 0 auto;
+      }
+      
+      .content-area {
+        order: 2;
       }
     }
 
     @media (max-width: 1024px) {
       .builder-main {
         grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
       }
       
       .sidebar {
         position: static;
+        order: 1;
+      }
+      
+      .content-area {
         order: 2;
+      }
+      
+      .a5-preview-pane {
+        order: 3;
       }
       
       .builder-header {
@@ -614,9 +627,6 @@
             <label>Contact Information</label>
             <textarea id="coverContact" placeholder="Box office, phone, website, etc."></textarea>
           </div>
-          <div class="live-preview" id="coverPreview">
-            <!-- Live preview will appear here -->
-          </div>
           <div class="editor-actions">
             <button class="btn-primary" onclick="savePage('cover')">Save Page</button>
             <button class="btn-secondary" onclick="cancelEdit()">Cancel</button>
@@ -662,9 +672,6 @@
               <option value="left">Left side</option>
             </select>
           </div>
-          <div class="live-preview" id="paragraphPreview">
-            <!-- Live preview will appear here -->
-          </div>
           <div class="editor-actions">
             <button class="btn-primary" onclick="savePage('paragraph')">Save Page</button>
             <button class="btn-secondary" onclick="cancelEdit()">Cancel</button>
@@ -706,9 +713,6 @@
             </div>
             <button type="button" class="btn-secondary" onclick="addCreditsEntry()">Add Entry</button>
           </div>
-          <div class="live-preview" id="creditsPreview">
-            <!-- Live preview will appear here -->
-          </div>
           <div class="editor-actions">
             <button class="btn-primary" onclick="savePage('credits')">Save Page</button>
             <button class="btn-secondary" onclick="cancelEdit()">Cancel</button>
@@ -748,9 +752,6 @@
             <div id="galleryImages">
               <!-- Dynamic image uploads will be added here -->
             </div>
-          </div>
-          <div class="live-preview" id="galleryPreview">
-            <!-- Live preview will appear here -->
           </div>
           <div class="editor-actions">
             <button class="btn-primary" onclick="savePage('image-gallery')">Save Page</button>
@@ -1148,10 +1149,6 @@
     }
     
     function updatePreview(template) {
-      const preview = document.getElementById(template.replace('-', '') + 'Preview') || 
-                     document.getElementById(template.replace('-', '') + 'LivePreview');
-      if (!preview) return;
-      
       const theme = themes[document.getElementById('programmeTheme').value] || themes.classic;
       const data = collectPageData(template);
       
@@ -1175,116 +1172,9 @@
       
       const customTheme = { ...theme, bg: customBg, color: customText, heading: customText };
       
-      let previewHTML = '';
-      
-      switch (template) {
-        case 'cover':
-          previewHTML = generateCoverPreview(data, customTheme);
-          break;
-        case 'paragraph':
-          previewHTML = generateParagraphPreview(data, customTheme);
-          break;
-        case 'credits':
-          previewHTML = generateCreditsPreview(data, customTheme);
-          break;
-        case 'image-gallery':
-          previewHTML = generateGalleryPreview(data, customTheme);
-          break;
-      }
-      
-      preview.innerHTML = `
-        <div style="background: ${customBg}; padding: 20px; border-radius: 8px; color: ${customText}; border: 1px solid #e0e0e0;">
-          <h4 style="margin-top: 0; color: ${customText};">Live Preview (A5 Size)</h4>
-          ${previewHTML}
-        </div>
-      `;
-      
-      // Programme builder enhancement - Update A5 real-size preview
+      // Only update A5 real-size preview (removed live preview)
       updateA5Preview(template, data, customTheme, customBg);
     }
-    
-    function generateCoverPreview(data, theme) {
-      return `
-        <div style="text-align: center;">
-          ${data.coverImageFile ? `<img src="${data.coverImageFile.url}" style="max-width: 200px; max-height: 150px; border-radius: 6px; margin-bottom: 15px;">` : ''}
-          <h2 style="color: ${theme.heading}; margin: 10px 0;">${data.coverPlayName || 'Play Name'}</h2>
-          <p style="color: ${theme.accent}; font-weight: bold; margin: 5px 0;">${data.coverDate || 'Date'}</p>
-          <p style="color: ${theme.accent}; font-weight: bold; margin: 5px 0;">${data.coverVenue || 'Venue'}</p>
-          <p style="color: ${theme.accent}; margin: 5px 0;">Director: ${data.coverDirector || 'Director'}</p>
-          ${data.coverSynopsis ? `<p style="margin: 15px 0; font-style: italic;">${data.coverSynopsis}</p>` : ''}
-          ${data.coverContact ? `<div style="margin: 15px 0; font-size: 0.9em;">${data.coverContact.replace(/\n/g, '<br>')}</div>` : ''}
-        </div>
-      `;
-    }
-    
-    function generateParagraphPreview(data, theme) {
-      const imageHTML = data.paragraphImageFile ? 
-        `<img src="${data.paragraphImageFile.url}" style="max-width: 150px; max-height: 150px; border-radius: 6px;">` : '';
-      
-      const contentHTML = `
-        <h3 style="color: ${theme.heading}; margin-top: 0;">${data.paragraphTitle || 'Page Title'}</h3>
-        <div style="line-height: 1.6;">${data.paragraphContent ? data.paragraphContent.replace(/\n/g, '<br>') : 'Content will appear here...'}</div>
-      `;
-      
-      if (!imageHTML) return contentHTML;
-      
-      switch (data.paragraphImagePos) {
-        case 'above':
-          return `<div style="text-align: center; margin-bottom: 15px;">${imageHTML}</div>${contentHTML}`;
-        case 'below':
-          return `${contentHTML}<div style="text-align: center; margin-top: 15px;">${imageHTML}</div>`;
-        case 'right':
-          return `<div style="display: flex; gap: 15px; align-items: flex-start;"><div style="flex: 1;">${contentHTML}</div><div>${imageHTML}</div></div>`;
-        case 'left':
-          return `<div style="display: flex; gap: 15px; align-items: flex-start;"><div>${imageHTML}</div><div style="flex: 1;">${contentHTML}</div></div>`;
-        default:
-          return `${contentHTML}<div style="text-align: center; margin-top: 15px;">${imageHTML}</div>`;
-      }
-    }
-    
-    function generateCreditsPreview(data, theme) {
-      const entries = data.entries || [];
-      if (entries.length === 0) {
-        return `
-          <h3 style="color: ${theme.heading}; margin-top: 0;">${data.creditsTitle || 'Credits'}</h3>
-          <p style="color: #999; font-style: italic;">Add entries to see preview...</p>
-        `;
-      }
-      
-      const listHTML = entries.map(entry => {
-        if (data.creditsType === 'simple') {
-          return `<li>${entry.name || entry.text || ''}</li>`;
-        } else {
-          return `<li>${entry.name || ''} ${entry.role ? `- ${entry.role}` : ''}</li>`;
-        }
-      }).join('');
-      
-      return `
-        <h3 style="color: ${theme.heading}; margin-top: 0;">${data.creditsTitle || 'Credits'}</h3>
-        <ul style="list-style: none; padding: 0; text-align: center;">
-          ${listHTML}
-        </ul>
-      `;
-    }
-    
-    function generateGalleryPreview(data, theme) {
-      const images = data.images || [];
-      const layout = data.galleryLayout || '1';
-      const cols = layout === '4' ? 2 : layout === '3' ? 3 : layout === '2' ? 2 : 1;
-      
-      const imageHTML = images.map(img => 
-        img ? `<img src="${img.url}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px;">` : 
-              '<div style="width: 100%; height: 100px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999;">No image</div>'
-      ).join('');
-      
-      return `
-        <h3 style="color: ${theme.heading}; margin-top: 0;">${data.galleryTitle || 'Image Gallery'}</h3>
-        <div style="display: grid; grid-template-columns: repeat(${cols}, 1fr); gap: 10px;">
-          ${imageHTML}
-        </div>
-      `;
-    }
-    
     
     function updateAllPreviews() {
       const activeEditor = document.querySelector('.page-editor.active');
