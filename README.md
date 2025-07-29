@@ -10,7 +10,15 @@ An Express/EJS web application for generating themed A5 play programmes as PDFs.
 - Director's notes with photo support
 - Adverts and sponsor sections
 - Live preview functionality
-- PDF generation for print-ready programmes
+- **Improved A5 preview with perfect centering and content filling**
+- **Dual PDF export options:**
+  - Standard PDF generation (server-side using PDFKit)
+  - **NEW: Image-based PDF export (experimental, client-side with html2canvas + jsPDF)**
+- **Image-based export features:**
+  - 72 DPI rendering (with 300 DPI upgrade path documented)
+  - Browser-based image processing
+  - Multi-page support with sequential rendering
+  - Matches on-screen preview exactly for consistent output
 
 ## 🎨 AI Artwork Generation (Prototype Feature)
 
@@ -61,6 +69,7 @@ All existing functionality remains completely unchanged.
 
 ```bash
 npm install
+./setup-libs.sh  # Sets up libraries for image-based PDF export
 npm start
 ```
 
