@@ -4,11 +4,39 @@
   <title>Programme Builder - A5 Programme Generator</title>
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="stylesheet" href="/css/a5-preview.css">
-  <!-- Image-based PDF Export Dependencies - Local libraries with CDN fallback -->
-  <script src="/js/libs/html2canvas.min.js" 
-          onerror="console.warn('Local html2canvas failed, trying CDN fallback'); loadLibraryFromCDN('html2canvas', 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');"></script>
-  <script src="/js/libs/jspdf.umd.min.js" 
-          onerror="console.warn('Local jsPDF failed, trying CDN fallback'); loadLibraryFromCDN('jspdf', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');"></script>
+  <!-- Image-based PDF Export Dependencies - Up-to-date CDN sources -->
+  <script>
+    // CDN fallback function for library loading - must be defined before script tags
+    // Future maintainers: This handles backup CDN loading if primary CDN fails
+    function loadLibraryFromCDN(libraryName, cdnUrl) {
+      console.log(`Attempting CDN fallback for ${libraryName} from ${cdnUrl}`);
+      const script = document.createElement('script');
+      script.src = cdnUrl;
+      script.crossOrigin = 'anonymous'; // Enable CORS for CDN scripts
+      script.onload = () => {
+        console.log(`Successfully loaded ${libraryName} from CDN fallback`);
+        // Re-check libraries after CDN load and update button state
+        setTimeout(() => {
+          if (window.checkLibrariesLoaded) window.checkLibrariesLoaded();
+          if (window.updateExportButtonState) window.updateExportButtonState();
+        }, 500);
+      };
+      script.onerror = () => {
+        console.error(`Failed to load ${libraryName} from CDN fallback`);
+        if (window.showLibraryError) window.showLibraryError(libraryName);
+        if (window.updateExportButtonState) window.updateExportButtonState(); // Update button even on failure
+      };
+      document.head.appendChild(script);
+    }
+  </script>
+  <!-- html2canvas v1.4.1 from cdnjs.cloudflare.com -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" 
+          crossorigin="anonymous"
+          onerror="console.warn('Primary html2canvas CDN failed, trying backup'); loadLibraryFromCDN('html2canvas', 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');"></script>
+  <!-- jsPDF v2.5.1 from cdnjs.cloudflare.com -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" 
+          crossorigin="anonymous"
+          onerror="console.warn('Primary jsPDF CDN failed, trying backup'); loadLibraryFromCDN('jspdf', 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js');"></script>
   <style>
     /* Programme builder enhancement - Professional UI styling inspired by theatre graphics */
     .builder-container {
@@ -795,52 +823,74 @@
       }, 3000);
     }
     
-    // CDN fallback function for library loading
-    function loadLibraryFromCDN(libraryName, cdnUrl) {
-      console.log(`Attempting CDN fallback for ${libraryName} from ${cdnUrl}`);
-      const script = document.createElement('script');
-      script.src = cdnUrl;
-      script.onload = () => {
-        console.log(`Successfully loaded ${libraryName} from CDN`);
-        // Re-check libraries after CDN load
-        setTimeout(() => checkLibrariesLoaded(), 500);
-      };
-      script.onerror = () => {
-        console.error(`Failed to load ${libraryName} from CDN fallback`);
-        showLibraryError(libraryName);
-      };
-      document.head.appendChild(script);
-    }
-    
     // Error handling for missing libraries
+    // Future maintainers: This shows specific error messages for debugging library issues
     function showLibraryError(libraryName) {
-      const errorMessage = `Failed to load ${libraryName} library. Some features may not work properly.`;
+      const errorMessage = `Failed to load ${libraryName} library. Image-based PDF export will not work.`;
       console.error(errorMessage);
       showNotification(errorMessage, 'error');
     }
     
+    // Make functions globally available for CDN fallback
+    window.showLibraryError = showLibraryError;
+    
     // Check if libraries are loaded properly
+    // Future maintainers: jsPDF v2+ CDN builds expose the library as window.jspdf.jsPDF, not window.jsPDF
     function checkLibrariesLoaded() {
-      const libraries = [];
+      const missingLibraries = [];
       
-      if (typeof html2canvas === 'undefined') {
-        libraries.push('html2canvas');
+      // Check for html2canvas (global function)
+      if (typeof window.html2canvas === 'undefined') {
+        missingLibraries.push('html2canvas');
+        console.warn('html2canvas not found at window.html2canvas');
       }
       
-      if (typeof window.jspdf === 'undefined') {
-        libraries.push('jsPDF');
+      // Check for jsPDF v2+ structure: window.jspdf.jsPDF
+      if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
+        missingLibraries.push('jsPDF');
+        console.warn('jsPDF not found at window.jspdf.jsPDF (jsPDF v2+ structure)');
       }
       
-      if (libraries.length > 0) {
-        const errorMessage = `Missing libraries: ${libraries.join(', ')}. Image-based PDF export may not work.`;
+      if (missingLibraries.length > 0) {
+        const errorMessage = `Required libraries not loaded: ${missingLibraries.join(', ')}. Image-based PDF export disabled.`;
         console.warn(errorMessage);
         showNotification(errorMessage, 'error');
         return false;
       }
       
-      console.log('All required libraries loaded successfully');
+      console.log('All required libraries loaded successfully:', {
+        html2canvas: typeof window.html2canvas,
+        jsPDF: typeof window.jspdf?.jsPDF
+      });
       return true;
     }
+    
+    // Make function globally available for CDN fallback
+    window.checkLibrariesLoaded = checkLibrariesLoaded;
+    
+    // Update export button state based on library availability
+    // Future maintainers: This ensures the button is only enabled when libraries are ready
+    function updateExportButtonState() {
+      const exportBtn = document.getElementById('exportImageBasedPdfBtn');
+      if (!exportBtn) return;
+      
+      const librariesLoaded = checkLibrariesLoaded();
+      
+      if (librariesLoaded) {
+        exportBtn.disabled = false;
+        exportBtn.style.opacity = '1';
+        exportBtn.title = 'Export PDF using image-based rendering (requires internet connection)';
+        exportBtn.textContent = 'Export PDF (Image-based, Experimental)';
+      } else {
+        exportBtn.disabled = true;
+        exportBtn.style.opacity = '0.5';
+        exportBtn.title = 'Image-based PDF export unavailable - required libraries not loaded';
+        exportBtn.textContent = 'Export PDF (Libraries not loaded)';
+      }
+    }
+    
+    // Make function globally available for CDN fallback
+    window.updateExportButtonState = updateExportButtonState;
     
     // Missing preview generation functions
     function generateCoverPreview(data, theme) {
@@ -990,10 +1040,23 @@
     
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
-      // Check if libraries are loaded after page load
+      // Check if libraries are loaded after page load and update button state
       setTimeout(() => {
         checkLibrariesLoaded();
+        updateExportButtonState();
       }, 1000); // Give time for CDN libraries to load
+      
+      // Re-check periodically for up to 10 seconds in case of slow network
+      let checkCount = 0;
+      const maxChecks = 5;
+      const recheckInterval = setInterval(() => {
+        checkCount++;
+        updateExportButtonState();
+        
+        if (checkLibrariesLoaded() || checkCount >= maxChecks) {
+          clearInterval(recheckInterval);
+        }
+      }, 2000);
       
       // Initialize A5 preview component
       a5Preview = new A5Preview('a5PreviewContainer', {
@@ -1918,21 +1981,33 @@
       `);
     }
     
-    // TODO: Image-based PDF Export (Experimental)
-    // TODO: Future enhancements:
-    // - Support for 300 DPI rendering (currently 72 DPI)
-    // - Local/Heroku backend storage for generated images
-    // - Server-side image processing for better quality
-    // - Batch processing for large programmes
+    // Image-based PDF Export (Experimental)
+    // Future maintainers: This function generates PDFs by rendering pages as images
+    // Mobile browser caveats:
+    // - iOS Safari: html2canvas may have limited support for CSS transforms and filters
+    // - Android Chrome: Large canvases may cause memory issues on low-end devices
+    // - All mobile: Recommend testing on target devices before deployment
     async function exportImageBasedPdf() {
       if (programmePages.length === 0) {
         alert('No pages to export. Add some pages first.');
         return;
       }
       
-      // Check if required libraries are loaded
-      if (!checkLibrariesLoaded()) {
-        alert('Required libraries (html2canvas, jsPDF) are not loaded. Cannot export image-based PDF.');
+      // Check if required libraries are loaded with specific error messages
+      const missingLibraries = [];
+      
+      if (typeof window.html2canvas === 'undefined') {
+        missingLibraries.push('html2canvas');
+      }
+      
+      if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
+        missingLibraries.push('jsPDF');
+      }
+      
+      if (missingLibraries.length > 0) {
+        const errorMessage = `Required libraries (${missingLibraries.join(', ')}) are not loaded. Cannot export image-based PDF.`;
+        alert(errorMessage);
+        console.error('Missing libraries for PDF export:', missingLibraries);
         return;
       }
       
@@ -1943,9 +2018,10 @@
       exportBtn.disabled = true;
       
       try {
+        // Use jsPDF v2+ syntax: destructure from window.jspdf
         const { jsPDF } = window.jspdf;
         if (!jsPDF) {
-          throw new Error('jsPDF library not found');
+          throw new Error('jsPDF constructor not found in window.jspdf.jsPDF');
         }
         
         const pdf = new jsPDF({
@@ -2049,13 +2125,10 @@
           }
           
           // Generate image using html2canvas with 72 DPI (default)
-          // TODO: For 300 DPI support, increase scale to ~4.17 (300/72)
-          if (typeof html2canvas === 'undefined') {
-            throw new Error('html2canvas library not found');
-          }
-          
-          const canvas = await html2canvas(tempContainer, {
-            scale: 1, // 72 DPI - TODO: Increase to ~4.17 for 300 DPI
+          // Future maintainers: For 300 DPI support, increase scale to ~4.17 (300/72)
+          // Note: Higher DPI may cause memory issues on mobile devices
+          const canvas = await window.html2canvas(tempContainer, {
+            scale: 1, // 72 DPI - Increase to ~4.17 for 300 DPI
             width: 280,
             height: 397,
             backgroundColor: customBg,
@@ -2064,7 +2137,8 @@
             foreignObjectRendering: true
           });
           
-          // Store image in memory (browser) - TODO: Add backend storage option
+          // Store image in memory (browser) 
+          // Future maintainers: Consider adding backend storage option for large programmes
           const imgData = canvas.toDataURL('image/jpeg', 0.92); // High quality JPEG
           
           // Add page to PDF (A5 portrait: 148mm x 210mm)
@@ -2093,11 +2167,21 @@
         
       } catch (error) {
         console.error('Error generating image-based PDF:', error);
-        showNotification(`Error generating image-based PDF: ${error.message}`, 'error');
+        const errorMsg = error.message || 'Unknown error occurred';
+        showNotification(`Error generating image-based PDF: ${errorMsg}`, 'error');
+        
+        // Log additional debug info for future maintainers
+        console.error('Debug info:', {
+          html2canvas: typeof window.html2canvas,
+          jspdf: typeof window.jspdf,
+          jsPDF: typeof window.jspdf?.jsPDF,
+          userAgent: navigator.userAgent
+        });
       } finally {
         // Reset button
         exportBtn.textContent = originalText;
         exportBtn.disabled = false;
+        updateExportButtonState(); // Ensure proper state after export
       }
     }
     
