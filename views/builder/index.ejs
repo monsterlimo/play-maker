@@ -4,9 +4,11 @@
   <title>Programme Builder - A5 Programme Generator</title>
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="stylesheet" href="/css/a5-preview.css">
-  <!-- Image-based PDF Export Dependencies -->
-  <script src="/js/libs/html2canvas.min.js"></script>
-  <script src="/js/libs/jspdf.umd.min.js"></script>
+  <!-- Image-based PDF Export Dependencies - Local libraries with CDN fallback -->
+  <script src="/js/libs/html2canvas.min.js" 
+          onerror="console.warn('Local html2canvas failed, trying CDN fallback'); loadLibraryFromCDN('html2canvas', 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');"></script>
+  <script src="/js/libs/jspdf.umd.min.js" 
+          onerror="console.warn('Local jsPDF failed, trying CDN fallback'); loadLibraryFromCDN('jspdf', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');"></script>
   <style>
     /* Programme builder enhancement - Professional UI styling inspired by theatre graphics */
     .builder-container {
@@ -775,6 +777,198 @@
   </div>
   
   <script src="/js/a5-preview.js"></script>
+  
+  <script>
+    // Notification system - must be defined early
+    function showNotification(message, type = 'info') {
+      // Simple notification system
+      const notification = document.createElement('div');
+      const bgColor = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007bff';
+      notification.style.cssText = 
+        'position: fixed; top: 20px; right: 20px; padding: 15px 20px; border-radius: 6px; color: white; font-weight: bold; z-index: 1000; background: ' + bgColor + '; box-shadow: 0 4px 12px rgba(0,0,0,0.2);';
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+    
+    // CDN fallback function for library loading
+    function loadLibraryFromCDN(libraryName, cdnUrl) {
+      console.log(`Attempting CDN fallback for ${libraryName} from ${cdnUrl}`);
+      const script = document.createElement('script');
+      script.src = cdnUrl;
+      script.onload = () => {
+        console.log(`Successfully loaded ${libraryName} from CDN`);
+        // Re-check libraries after CDN load
+        setTimeout(() => checkLibrariesLoaded(), 500);
+      };
+      script.onerror = () => {
+        console.error(`Failed to load ${libraryName} from CDN fallback`);
+        showLibraryError(libraryName);
+      };
+      document.head.appendChild(script);
+    }
+    
+    // Error handling for missing libraries
+    function showLibraryError(libraryName) {
+      const errorMessage = `Failed to load ${libraryName} library. Some features may not work properly.`;
+      console.error(errorMessage);
+      showNotification(errorMessage, 'error');
+    }
+    
+    // Check if libraries are loaded properly
+    function checkLibrariesLoaded() {
+      const libraries = [];
+      
+      if (typeof html2canvas === 'undefined') {
+        libraries.push('html2canvas');
+      }
+      
+      if (typeof window.jspdf === 'undefined') {
+        libraries.push('jsPDF');
+      }
+      
+      if (libraries.length > 0) {
+        const errorMessage = `Missing libraries: ${libraries.join(', ')}. Image-based PDF export may not work.`;
+        console.warn(errorMessage);
+        showNotification(errorMessage, 'error');
+        return false;
+      }
+      
+      console.log('All required libraries loaded successfully');
+      return true;
+    }
+    
+    // Missing preview generation functions
+    function generateCoverPreview(data, theme) {
+      return `
+        <div style="text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 20px; box-sizing: border-box;">
+          ${data.coverImageFile ? `<div style="margin-bottom: 20px;"><img src="${data.coverImageFile.url}" style="max-width: 100%; max-height: 150px; border-radius: 8px; object-fit: cover;"></div>` : ''}
+          <h1 style="color: ${theme.heading}; margin: 20px 0; font-size: 2.2em; font-weight: bold; line-height: 1.2;">${data.coverPlayName || 'Play Name'}</h1>
+          <p style="color: ${theme.accent || theme.color}; font-weight: bold; margin: 15px 0; font-size: 1.3em;">${data.coverDate || 'Date'}</p>
+          <p style="color: ${theme.accent || theme.color}; font-weight: bold; margin: 15px 0; font-size: 1.3em;">${data.coverVenue || 'Venue'}</p>
+          <p style="color: ${theme.accent || theme.color}; margin: 15px 0; font-size: 1.1em;">Directed by ${data.coverDirector || 'Director'}</p>
+          ${data.coverSynopsis ? `<p style="margin: 20px 0; font-style: italic; font-size: 1em; line-height: 1.5; flex: 1; overflow: auto;">${data.coverSynopsis}</p>` : ''}
+          ${data.coverContact ? `<div style="margin-top: auto; font-size: 0.9em; line-height: 1.4; padding-top: 20px; border-top: 1px solid ${theme.accent || '#ccc'};">${data.coverContact.replace(/\n/g, '<br>')}</div>` : ''}
+        </div>
+      `;
+    }
+    
+    function generateParagraphPreview(data, theme) {
+      const imageHTML = data.paragraphImageFile ? 
+        `<img src="${data.paragraphImageFile.url}" style="max-width: 300px; max-height: 200px; border-radius: 8px; object-fit: cover;">` : '';
+      
+      const contentHTML = `
+        <h2 style="color: ${theme.heading}; margin: 0 0 20px 0; font-size: 2em; font-weight: bold;">${data.paragraphTitle || 'Page Title'}</h2>
+        <div style="line-height: 1.6; font-size: 1.1em; text-align: justify;">${data.paragraphContent ? data.paragraphContent.replace(/\n/g, '<br>') : 'Content will appear here...'}</div>
+      `;
+      
+      if (!imageHTML) return `<div style="padding: 30px;">${contentHTML}</div>`;
+      
+      switch (data.paragraphImagePos) {
+        case 'above':
+          return `<div style="padding: 30px;"><div style="text-align: center; margin-bottom: 25px;">${imageHTML}</div>${contentHTML}</div>`;
+        case 'below':
+          return `<div style="padding: 30px;">${contentHTML}<div style="text-align: center; margin-top: 25px;">${imageHTML}</div></div>`;
+        case 'right':
+          return `<div style="padding: 30px; display: flex; gap: 25px; align-items: flex-start;"><div style="flex: 1; min-width: 0;">${contentHTML}</div><div style="flex-shrink: 0;">${imageHTML}</div></div>`;
+        case 'left':
+          return `<div style="padding: 30px; display: flex; gap: 25px; align-items: flex-start;"><div style="flex-shrink: 0;">${imageHTML}</div><div style="flex: 1; min-width: 0;">${contentHTML}</div></div>`;
+        default:
+          return `<div style="padding: 30px;">${contentHTML}<div style="text-align: center; margin-top: 25px;">${imageHTML}</div></div>`;
+      }
+    }
+    
+    function generateCreditsPreview(data, theme) {
+      const entries = data.entries || [];
+      if (entries.length === 0) {
+        return `
+          <div style="padding: 30px; text-align: center;">
+            <h2 style="color: ${theme.heading}; margin: 0 0 30px 0; font-size: 2em; font-weight: bold;">${data.creditsTitle || 'Credits'}</h2>
+            <p style="color: #999; font-size: 1.2em;">No entries added yet</p>
+          </div>
+        `;
+      }
+      
+      const creditsType = data.creditsType || 'detailed';
+      let listHTML = '';
+      
+      if (creditsType === 'simple') {
+        listHTML = entries.map(entry => 
+          `<div style="text-align: center; margin-bottom: 15px; font-size: 1.1em;">${entry.text || ''}</div>`
+        ).join('');
+      } else {
+        listHTML = entries.map(entry => 
+          `<div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 1.1em; border-bottom: 1px dotted ${theme.accent || '#ccc'}; padding-bottom: 8px;">
+            <span style="font-weight: bold;">${entry.name || ''}</span>
+            <span>${entry.role || ''}</span>
+          </div>`
+        ).join('');
+      }
+      
+      return `
+        <div style="padding: 30px;">
+          <h2 style="color: ${theme.heading}; margin: 0 0 30px 0; font-size: 2em; font-weight: bold; text-align: center;">${data.creditsTitle || 'Credits'}</h2>
+          <div>${listHTML}</div>
+        </div>
+      `;
+    }
+    
+    function generateGalleryPreview(data, theme) {
+      const images = [];
+      for (let i = 1; i <= 4; i++) {
+        if (data[`galleryImage${i}`]) {
+          images.push(data[`galleryImage${i}`]);
+        }
+      }
+      
+      if (images.length === 0) {
+        return `
+          <div style="padding: 30px; text-align: center;">
+            <h2 style="color: ${theme.heading}; margin: 0 0 30px 0; font-size: 2em; font-weight: bold;">${data.galleryTitle || 'Image Gallery'}</h2>
+            <div style="color: #999; font-size: 1.2em; padding: 60px 20px;">No images added yet</div>
+          </div>
+        `;
+      }
+      
+      const layout = parseInt(data.galleryLayout) || images.length;
+      let galleryHTML = '';
+      
+      switch (layout) {
+        case 1:
+          galleryHTML = `<div style="text-align: center;"><img src="${images[0].url}" style="max-width: 100%; max-height: 400px; border-radius: 8px; object-fit: cover;"></div>`;
+          break;
+        case 2:
+          galleryHTML = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; justify-items: center;">
+            ${images.slice(0, 2).map(img => `<img src="${img.url}" style="width: 100%; max-width: 300px; height: 200px; border-radius: 8px; object-fit: cover;">`).join('')}
+          </div>`;
+          break;
+        case 3:
+          galleryHTML = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; justify-items: center;">
+            <img src="${images[0].url}" style="grid-column: 1 / -1; width: 100%; max-width: 400px; height: 200px; border-radius: 8px; object-fit: cover;">
+            ${images.slice(1, 3).map(img => `<img src="${img.url}" style="width: 100%; max-width: 200px; height: 150px; border-radius: 8px; object-fit: cover;">`).join('')}
+          </div>`;
+          break;
+        case 4:
+        default:
+          galleryHTML = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; justify-items: center;">
+            ${images.slice(0, 4).map(img => `<img src="${img.url}" style="width: 100%; max-width: 200px; height: 150px; border-radius: 8px; object-fit: cover;">`).join('')}
+          </div>`;
+      }
+      
+      return `
+        <div style="padding: 30px;">
+          <h2 style="color: ${theme.heading}; margin: 0 0 25px 0; font-size: 2em; font-weight: bold; text-align: center;">${data.galleryTitle || 'Image Gallery'}</h2>
+          ${galleryHTML}
+          ${data.galleryDescription ? `<p style="margin-top: 25px; font-size: 1.1em; text-align: center; line-height: 1.5;">${data.galleryDescription}</p>` : ''}
+        </div>
+      `;
+    }
+  </script>
+  
   <script>
     // Programme builder enhancement - Builder functionality
     
@@ -796,6 +990,11 @@
     
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
+      // Check if libraries are loaded after page load
+      setTimeout(() => {
+        checkLibrariesLoaded();
+      }, 1000); // Give time for CDN libraries to load
+      
       // Initialize A5 preview component
       a5Preview = new A5Preview('a5PreviewContainer', {
         title: '📄 A5 Print Preview',
@@ -1731,6 +1930,12 @@
         return;
       }
       
+      // Check if required libraries are loaded
+      if (!checkLibrariesLoaded()) {
+        alert('Required libraries (html2canvas, jsPDF) are not loaded. Cannot export image-based PDF.');
+        return;
+      }
+      
       // Show loading state
       const exportBtn = document.getElementById('exportImageBasedPdfBtn');
       const originalText = exportBtn.textContent;
@@ -1739,6 +1944,10 @@
       
       try {
         const { jsPDF } = window.jspdf;
+        if (!jsPDF) {
+          throw new Error('jsPDF library not found');
+        }
+        
         const pdf = new jsPDF({
           orientation: 'portrait',
           unit: 'mm',
@@ -1841,6 +2050,10 @@
           
           // Generate image using html2canvas with 72 DPI (default)
           // TODO: For 300 DPI support, increase scale to ~4.17 (300/72)
+          if (typeof html2canvas === 'undefined') {
+            throw new Error('html2canvas library not found');
+          }
+          
           const canvas = await html2canvas(tempContainer, {
             scale: 1, // 72 DPI - TODO: Increase to ~4.17 for 300 DPI
             width: 280,
@@ -1945,21 +2158,6 @@
         exportBtn.textContent = originalText;
         exportBtn.disabled = false;
       });
-    }
-    
-    function showNotification(message, type = 'info') {
-      // Simple notification system
-      const notification = document.createElement('div');
-      const bgColor = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007bff';
-      notification.style.cssText = 
-        'position: fixed; top: 20px; right: 20px; padding: 15px 20px; border-radius: 6px; color: white; font-weight: bold; z-index: 1000; background: ' + bgColor + '; box-shadow: 0 4px 12px rgba(0,0,0,0.2);';
-      notification.textContent = message;
-      
-      document.body.appendChild(notification);
-      
-      setTimeout(() => {
-        notification.remove();
-      }, 3000);
     }
   </script>
 </body>
