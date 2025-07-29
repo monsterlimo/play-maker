@@ -4,6 +4,9 @@
   <title>Programme Builder - A5 Programme Generator</title>
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="stylesheet" href="/css/a5-preview.css">
+  <!-- Image-based PDF Export Dependencies -->
+  <script src="/js/libs/html2canvas.min.js"></script>
+  <script src="/js/libs/jspdf.umd.min.js"></script>
   <style>
     /* Programme builder enhancement - Professional UI styling inspired by theatre graphics */
     .builder-container {
@@ -518,6 +521,7 @@
         <a href="/" class="nav-button">← Back to Start</a>
         <button id="previewProgrammeBtn" class="nav-button">Preview Programme</button>
         <button id="exportProgrammeBtn" class="btn-success">Export PDF</button>
+        <button id="exportImageBasedPdfBtn" class="btn-success" style="background: linear-gradient(135deg, #6f42c1 0%, #8e24aa 100%); box-shadow: 0 4px 15px rgba(111, 66, 193, 0.3);">Export PDF (Image-based, Experimental)</button>
       </div>
     </div>
     
@@ -833,6 +837,9 @@
       
       // Export button
       document.getElementById('exportProgrammeBtn').addEventListener('click', exportProgramme);
+      
+      // Experimental image-based export button
+      document.getElementById('exportImageBasedPdfBtn').addEventListener('click', exportImageBasedPdf);
       
       // Preview button
       document.getElementById('previewProgrammeBtn').addEventListener('click', previewFullProgramme);
@@ -1710,6 +1717,175 @@
         </body>
         </html>
       `);
+    }
+    
+    // TODO: Image-based PDF Export (Experimental)
+    // TODO: Future enhancements:
+    // - Support for 300 DPI rendering (currently 72 DPI)
+    // - Local/Heroku backend storage for generated images
+    // - Server-side image processing for better quality
+    // - Batch processing for large programmes
+    async function exportImageBasedPdf() {
+      if (programmePages.length === 0) {
+        alert('No pages to export. Add some pages first.');
+        return;
+      }
+      
+      // Show loading state
+      const exportBtn = document.getElementById('exportImageBasedPdfBtn');
+      const originalText = exportBtn.textContent;
+      exportBtn.textContent = 'Generating Images...';
+      exportBtn.disabled = true;
+      
+      try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a5' // A5 format: 148mm x 210mm
+        });
+        
+        // Get the current theme
+        const theme = themes[document.getElementById('programmeTheme').value] || themes.classic;
+        
+        // Sort pages by order
+        const sortedPages = [...programmePages].sort((a, b) => a.order - b.order);
+        
+        let pageCount = 0;
+        
+        for (const page of sortedPages) {
+          exportBtn.textContent = `Processing page ${pageCount + 1} of ${sortedPages.length}...`;
+          
+          // Create a temporary container for rendering
+          const tempContainer = document.createElement('div');
+          tempContainer.style.cssText = `
+            position: fixed;
+            top: -10000px;
+            left: -10000px;
+            width: 280px;
+            height: 397px;
+            background: white;
+            font-family: 'Times New Roman', serif;
+            font-size: 11px;
+            line-height: 1.4;
+            overflow: hidden;
+            z-index: -1;
+          `;
+          
+          // Get custom colors for this page
+          let customBg = page.data.coverBackgroundColor || page.data.paragraphBackgroundColor || 
+                         page.data.creditsBackgroundColor || page.data.galleryBackgroundColor || '#ffffff';
+          let customText = page.data.coverTextColor || page.data.paragraphTextColor || 
+                           page.data.creditsTextColor || page.data.galleryTextColor || '#2c2c2c';
+          
+          const customTheme = { ...theme, bg: customBg, color: customText, heading: customText };
+          
+          // Set background color
+          tempContainer.style.backgroundColor = customBg;
+          
+          // Create content container
+          const contentContainer = document.createElement('div');
+          contentContainer.style.cssText = `
+            padding: 20px;
+            width: calc(280px - 40px);
+            height: calc(397px - 40px);
+            overflow: hidden;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            gap: 10px;
+            box-sizing: border-box;
+            color: ${customText};
+          `;
+          
+          // Generate page content HTML
+          let pageHTML = '';
+          switch (page.template) {
+            case 'cover':
+              pageHTML = generateA5CoverPreview(page.data, customTheme);
+              break;
+            case 'paragraph':
+              pageHTML = generateA5ParagraphPreview(page.data, customTheme);
+              break;
+            case 'credits':
+              pageHTML = generateA5CreditsPreview(page.data, customTheme);
+              break;
+            case 'image-gallery':
+              pageHTML = generateA5GalleryPreview(page.data, customTheme);
+              break;
+          }
+          
+          contentContainer.innerHTML = pageHTML;
+          tempContainer.appendChild(contentContainer);
+          document.body.appendChild(tempContainer);
+          
+          // Wait for any images to load
+          const images = tempContainer.querySelectorAll('img');
+          if (images.length > 0) {
+            await Promise.all(Array.from(images).map(img => {
+              return new Promise((resolve) => {
+                if (img.complete) {
+                  resolve();
+                } else {
+                  img.onload = resolve;
+                  img.onerror = resolve; // Continue even if image fails
+                }
+              });
+            }));
+          }
+          
+          // Generate image using html2canvas with 72 DPI (default)
+          // TODO: For 300 DPI support, increase scale to ~4.17 (300/72)
+          const canvas = await html2canvas(tempContainer, {
+            scale: 1, // 72 DPI - TODO: Increase to ~4.17 for 300 DPI
+            width: 280,
+            height: 397,
+            backgroundColor: customBg,
+            useCORS: true,
+            allowTaint: true,
+            foreignObjectRendering: true
+          });
+          
+          // Store image in memory (browser) - TODO: Add backend storage option
+          const imgData = canvas.toDataURL('image/jpeg', 0.92); // High quality JPEG
+          
+          // Add page to PDF (A5 portrait: 148mm x 210mm)
+          if (pageCount > 0) {
+            pdf.addPage('a5', 'portrait');
+          }
+          
+          // Add image as full-page A5 portrait
+          pdf.addImage(imgData, 'JPEG', 0, 0, 148, 210);
+          
+          // Clean up temporary container
+          document.body.removeChild(tempContainer);
+          
+          pageCount++;
+          
+          // Small delay to prevent browser freezing
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        // Save PDF
+        exportBtn.textContent = 'Saving PDF...';
+        const filename = `programme-image-based-${Date.now()}.pdf`;
+        pdf.save(filename);
+        
+        showNotification('Image-based PDF generated successfully! (72 DPI)', 'success');
+        
+      } catch (error) {
+        console.error('Error generating image-based PDF:', error);
+        showNotification(`Error generating image-based PDF: ${error.message}`, 'error');
+      } finally {
+        // Reset button
+        exportBtn.textContent = originalText;
+        exportBtn.disabled = false;
+      }
     }
     
     function exportProgramme() {

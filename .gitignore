@@ -2,6 +2,9 @@
 node_modules/
 npm-debug.log*
 
+# Third-party libraries (served locally)
+public/js/libs/
+
 # Uploads (runtime files)
 uploads/*.jpg
 uploads/*.jpeg
