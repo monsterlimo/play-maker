@@ -1038,6 +1038,13 @@
       drama:   { bg: '#ffebee', heading: '#7f0000', accent: '#d32f2f', color: '#b71c1c' }
     };
     
+    // PDF Export Configuration
+    // Fix for html2canvas + jsPDF black page issue: Always use white background for PDF generation
+    // to ensure visible content in exported PDFs. This can be adjusted if needed.
+    const PDF_EXPORT_CONFIG = {
+      backgroundColor: '#ffffff' // White background ensures visible content, preventing black pages
+    };
+    
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
       // Check if libraries are loaded after page load and update button state
@@ -2042,19 +2049,23 @@
           exportBtn.textContent = `Processing page ${pageCount + 1} of ${sortedPages.length}...`;
           
           // Create a temporary container for rendering
+          // Fix for html2canvas + jsPDF black page issue: Ensure container is properly positioned
+          // and has solid white background to prevent transparent/black captures
           const tempContainer = document.createElement('div');
           tempContainer.style.cssText = `
             position: fixed;
-            top: -10000px;
-            left: -10000px;
+            top: -9999px;
+            left: -9999px;
             width: 280px;
             height: 397px;
-            background: white;
+            background: ${PDF_EXPORT_CONFIG.backgroundColor};
             font-family: 'Times New Roman', serif;
             font-size: 11px;
             line-height: 1.4;
             overflow: hidden;
-            z-index: -1;
+            z-index: 9999;
+            visibility: visible;
+            opacity: 1;
           `;
           
           // Get custom colors for this page
@@ -2065,8 +2076,9 @@
           
           const customTheme = { ...theme, bg: customBg, color: customText, heading: customText };
           
-          // Set background color
-          tempContainer.style.backgroundColor = customBg;
+          // Set background color - use white for PDF export to prevent black pages
+          // Fix for html2canvas + jsPDF black page issue: Always use white background for PDF
+          tempContainer.style.backgroundColor = PDF_EXPORT_CONFIG.backgroundColor;
           
           // Create content container
           const contentContainer = document.createElement('div');
@@ -2127,14 +2139,17 @@
           // Generate image using html2canvas with 72 DPI (default)
           // Future maintainers: For 300 DPI support, increase scale to ~4.17 (300/72)
           // Note: Higher DPI may cause memory issues on mobile devices
+          // Fix for html2canvas + jsPDF black page issue: Explicitly set white background
           const canvas = await window.html2canvas(tempContainer, {
             scale: 1, // 72 DPI - Increase to ~4.17 for 300 DPI
             width: 280,
             height: 397,
-            backgroundColor: customBg,
+            backgroundColor: PDF_EXPORT_CONFIG.backgroundColor, // Explicit white background prevents black pages
             useCORS: true,
             allowTaint: true,
-            foreignObjectRendering: true
+            foreignObjectRendering: true,
+            logging: false, // Reduce console noise
+            removeContainer: true // Clean up after capture
           });
           
           // Store image in memory (browser) 
