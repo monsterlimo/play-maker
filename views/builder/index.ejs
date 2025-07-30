@@ -1042,7 +1042,24 @@
     // Fix for html2canvas + jsPDF black page issue: Always use white background for PDF generation
     // to ensure visible content in exported PDFs. This can be adjusted if needed.
     const PDF_EXPORT_CONFIG = {
-      backgroundColor: '#ffffff' // White background ensures visible content, preventing black pages
+      backgroundColor: '#ffffff', // White background ensures visible content, preventing black pages
+      // DEBUG MODE: Set to true to append html2canvas output to DOM for troubleshooting
+      // This helps isolate whether black PDF issues are from html2canvas capture or jsPDF conversion
+      // If debug canvas appears black, issue is with html2canvas; if canvas looks correct but PDF is black, issue is with jsPDF
+      // 
+      // HOW TO USE DEBUGGING:
+      // 1. EASY WAY: Double-click the "Export PDF (Image-based)" button to toggle debug mode
+      //    - Button text will show "[DEBUG ON]" when enabled
+      //    - Notification will confirm mode changes
+      // 2. MANUAL WAY: Change debugMode to true below and refresh page
+      // 3. When enabled, each page's html2canvas output will appear on screen during export
+      // 4. Debug canvases auto-remove after 30 seconds to prevent clutter
+      // 5. Use this to isolate whether the problem is with:
+      //    - html2canvas capture (if debug canvas is black/wrong)
+      //    - jsPDF conversion (if debug canvas looks correct but PDF is black)
+      // 
+      // ENABLE DEBUG: Change to true to enable visual debugging, or double-click the "Export PDF (Image-based)" button
+      debugMode: false
     };
     
     // Initialize
@@ -1109,6 +1126,20 @@
       
       // Experimental image-based export button
       document.getElementById('exportImageBasedPdfBtn').addEventListener('click', exportImageBasedPdf);
+      
+      // Double-click to toggle debug mode for image-based PDF export
+      // This provides an easy way to enable/disable debugging without editing code
+      document.getElementById('exportImageBasedPdfBtn').addEventListener('dblclick', function(e) {
+        e.preventDefault();
+        PDF_EXPORT_CONFIG.debugMode = !PDF_EXPORT_CONFIG.debugMode;
+        const status = PDF_EXPORT_CONFIG.debugMode ? 'ENABLED' : 'DISABLED';
+        showNotification(`PDF Debug Mode ${status}. ${PDF_EXPORT_CONFIG.debugMode ? 'html2canvas output will be shown during export.' : 'Normal export mode restored.'}`, 'info');
+        
+        // Update button text to indicate debug mode
+        const btn = document.getElementById('exportImageBasedPdfBtn');
+        const baseText = 'Export PDF (Image-based, Experimental)';
+        btn.textContent = PDF_EXPORT_CONFIG.debugMode ? baseText + ' [DEBUG ON]' : baseText;
+      });
       
       // Preview button
       document.getElementById('previewProgrammeBtn').addEventListener('click', previewFullProgramme);
@@ -2151,6 +2182,92 @@
             logging: false, // Reduce console noise
             removeContainer: true // Clean up after capture
           });
+          
+          // DEBUG MODE: Append html2canvas output to DOM for troubleshooting black PDF pages
+          // This helps isolate the issue: if canvas is black, problem is with html2canvas capture;
+          // if canvas looks correct but PDF is black, problem is with jsPDF image conversion
+          if (PDF_EXPORT_CONFIG.debugMode) {
+            // Create debug container for this canvas
+            const debugContainer = document.createElement('div');
+            debugContainer.style.cssText = `
+              position: fixed;
+              top: 20px;
+              right: 20px;
+              z-index: 10000;
+              background: white;
+              border: 3px solid red;
+              padding: 10px;
+              border-radius: 8px;
+              box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+              max-width: 300px;
+            `;
+            
+            // Add debug title
+            const debugTitle = document.createElement('div');
+            debugTitle.textContent = `DEBUG: Page ${pageCount + 1} html2canvas output`;
+            debugTitle.style.cssText = `
+              font-weight: bold;
+              color: red;
+              margin-bottom: 10px;
+              font-size: 14px;
+              text-align: center;
+            `;
+            debugContainer.appendChild(debugTitle);
+            
+            // Clone and scale down the canvas for display
+            const debugCanvas = document.createElement('canvas');
+            const debugCtx = debugCanvas.getContext('2d');
+            const scale = 0.5; // Scale down for display
+            debugCanvas.width = canvas.width * scale;
+            debugCanvas.height = canvas.height * scale;
+            debugCanvas.style.cssText = `
+              border: 1px solid #ccc;
+              display: block;
+              margin: 0 auto;
+            `;
+            
+            // Draw scaled version
+            debugCtx.drawImage(canvas, 0, 0, debugCanvas.width, debugCanvas.height);
+            debugContainer.appendChild(debugCanvas);
+            
+            // Add close button
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = 'Close';
+            closeBtn.style.cssText = `
+              margin-top: 10px;
+              padding: 5px 10px;
+              background: #dc3545;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+              display: block;
+              margin-left: auto;
+              margin-right: auto;
+            `;
+            closeBtn.onclick = () => debugContainer.remove();
+            debugContainer.appendChild(closeBtn);
+            
+            // Add debug info
+            const debugInfo = document.createElement('div');
+            debugInfo.innerHTML = `
+              <small style="color: #666; font-size: 12px; line-height: 1.4;">
+                Canvas: ${canvas.width}×${canvas.height}<br>
+                If this canvas is black, issue is with html2canvas capture.<br>
+                If canvas looks correct but PDF is black, issue is with jsPDF.
+              </small>
+            `;
+            debugContainer.appendChild(debugInfo);
+            
+            document.body.appendChild(debugContainer);
+            
+            // Auto-remove after 30 seconds to prevent DOM clutter
+            setTimeout(() => {
+              if (debugContainer.parentNode) {
+                debugContainer.remove();
+              }
+            }, 30000);
+          }
           
           // Store image in memory (browser) 
           // Future maintainers: Consider adding backend storage option for large programmes
