@@ -1046,6 +1046,18 @@
       // DEBUG MODE: Set to true to append html2canvas output to DOM for troubleshooting
       // This helps isolate whether black PDF issues are from html2canvas capture or jsPDF conversion
       // If debug canvas appears black, issue is with html2canvas; if canvas looks correct but PDF is black, issue is with jsPDF
+      // 
+      // HOW TO USE DEBUGGING:
+      // 1. EASY WAY: Double-click the "Export PDF (Image-based)" button to toggle debug mode
+      //    - Button text will show "[DEBUG ON]" when enabled
+      //    - Notification will confirm mode changes
+      // 2. MANUAL WAY: Change debugMode to true below and refresh page
+      // 3. When enabled, each page's html2canvas output will appear on screen during export
+      // 4. Debug canvases auto-remove after 30 seconds to prevent clutter
+      // 5. Use this to isolate whether the problem is with:
+      //    - html2canvas capture (if debug canvas is black/wrong)
+      //    - jsPDF conversion (if debug canvas looks correct but PDF is black)
+      // 
       // ENABLE DEBUG: Change to true to enable visual debugging, or double-click the "Export PDF (Image-based)" button
       debugMode: false
     };
